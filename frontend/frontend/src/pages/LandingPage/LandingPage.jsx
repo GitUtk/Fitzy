@@ -5,7 +5,7 @@ import SupportedStores from "./SupportedStores";
 import Benefits from "./benefits";
 import About from "./About";
 import Feedback from "./Feedback";
-import Contact from "./Contactus";
+import Contact from "./ContactUs";
 
 function LandingPage() {
   return (
