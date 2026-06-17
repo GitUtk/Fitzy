@@ -6,7 +6,7 @@
 
 Virtual Try-On is an AI-powered fashion platform that helps users visualize outfits on their own photos using real products from online stores. Users upload a full-body image, enter a style prompt, and receive personalized outfit recommendations with realistic AI-generated try-ons.
 
-<br>
+
 ![Virtual Try-On Screenshot](assets/image.png)
 
 ## Features
