@@ -1,30 +1,88 @@
 function NavBar() {
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-lg bg-black/40 border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 bg-[#F8F6F2]/90 backdrop-blur-md border-b border-black/10">
 
-        <h1 className="text-3xl font-bold">
-          FITZY<span className="text-orange-500"></span>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-5 flex items-center justify-between">
+
+        <h1 className="text-2xl md:text-3xl font-bold text-black">
+          FITZY
+          <span className="text-orange-500">.</span>
         </h1>
 
-        <div className="hidden md:flex gap-8 text-gray-300">
-          <a href="#" className="hover:text-white">Home</a>
-          <a href="#" className="hover:text-white">Explore</a>
-          <a href="#" className="hover:text-white">Features</a>
-          <a href="#" className="hover:text-white">Contact</a>
+        <div className="hidden lg:flex gap-8 text-gray-700 font-medium">
+
+          <a
+            href="#"
+            className="hover:text-orange-500 transition-colors duration-300"
+          >
+            Home
+          </a>
+
+          <a
+            href="#"
+            className="hover:text-orange-500 transition-colors duration-300"
+          >
+            Explore
+          </a>
+
+          <a
+            href="#"
+            className="hover:text-orange-500 transition-colors duration-300"
+          >
+            Features
+          </a>
+
+          <a
+            href="#"
+            className="hover:text-orange-500 transition-colors duration-300"
+          >
+            Contact
+          </a>
+
         </div>
 
-        <div className="flex gap-4 items-center">
-          <button className="text-gray-300 hover:text-white">
+        {/* Buttons */}
+        <div className="flex items-center gap-3">
+
+          <button
+            className="
+            text-black
+            font-medium
+            px-4
+            py-2
+            rounded-xl
+            hover:bg-black/5
+            transition
+            "
+          >
             Login
           </button>
 
-          <button className="bg-orange-500 hover:bg-orange-600 px-5 py-2 rounded-full font-semibold">
+          <button
+            className="
+            bg-orange-500
+            text-white
+            px-5
+            py-2.5
+            rounded-xl
+            font-semibold
+            border-2
+            border-black
+            shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
+            hover:translate-x-[2px]
+            hover:translate-y-[2px]
+            hover:shadow-none
+            transition-all
+            duration-200
+            "
+          >
             Sign Up
           </button>
+
         </div>
 
       </div>
+
     </nav>
   );
 }

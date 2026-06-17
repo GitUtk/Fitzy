@@ -5,37 +5,28 @@ import SupportedStores from "./SupportedStores";
 import Benefits from "./benefits";
 import About from "./About";
 import Feedback from "./Feedback";
+<<<<<<< HEAD
 import Contact from "./ContactUs";
+=======
+import BrandTagline from "./BrandTagline";
+>>>>>>> 89ac0fd (ui changes)
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8F6F2] text-black overflow-x-hidden">
 
-      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-violet-600/20 blur-[120px] rounded-full pointer-events-none"></div>
+      <NavBar />
 
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-purple-600/20 blur-[120px] rounded-full pointer-events-none"></div>
-
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[180px] rounded-full pointer-events-none"></div>
-
-      {/* Main Content */}
-      <main className="relative z-10">
-       <NavBar />
-
-  <Hero />
-
-  <UploadSection />
-
-  <Benefits />
-
-  
-
-  <About />
-  <SupportedStores />
-
-  <Feedback />
-    <Contact />
-
+      <main>
+        <Hero />
+        <UploadSection />
+        <Benefits />
+        <About />
+        <SupportedStores />
+        {/* <Feedback /> */}
+        <BrandTagline />
       </main>
+
     </div>
   );
 }
