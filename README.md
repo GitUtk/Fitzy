@@ -26,22 +26,16 @@ Virtual Try-On is an AI-powered fashion platform that helps users visualize outf
 * **Database:** MongoDB, Cloudinary
 * **AI/ML:** Gemini, CLIP, FAISS, StableVITON
 
-## Team
+## API Documentation
+
+You can find the backend API documentation here:
+
+[View API Docs](backend/API_DOCS.md)
+
+
+## Contributors
 
 * **Akshita** — AI/ML
 * **Utkarsh** — Backend
 * **Yashika** — Frontend
 
-## Business Model
-
-* Affiliate commissions
-* Premium subscriptions
-* Brand partnerships
-* B2B SaaS licensing
-* Sponsored product placements
-
-## USP
-
-**"Shop your style, not just products."**
-
-Personalized AI styling combined with virtual try-on using real, purchasable fashion products.
