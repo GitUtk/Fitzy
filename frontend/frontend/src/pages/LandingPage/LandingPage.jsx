@@ -5,11 +5,8 @@ import SupportedStores from "./SupportedStores";
 import Benefits from "./benefits";
 import About from "./About";
 import Feedback from "./Feedback";
-<<<<<<< HEAD
-import Contact from "./ContactUs";
-=======
+// import Contact from "./ContactUs";
 import BrandTagline from "./BrandTagline";
->>>>>>> 89ac0fd (ui changes)
 
 function LandingPage() {
   return (
