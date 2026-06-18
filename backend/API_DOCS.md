@@ -2,7 +2,7 @@
 ## Base URL
 
 ```
-http://localhost:8000/api/v1
+https://fitzy-f7uv.onrender.com/api/v1/
 ```
 
 ## Authentication
