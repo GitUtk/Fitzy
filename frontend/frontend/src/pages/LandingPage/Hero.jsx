@@ -4,11 +4,10 @@ function Hero() {
 
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-        {/* Left Side */}
         <div className="text-center lg:text-left">
 
           <div className="inline-block px-4 py-2 bg-orange-100 border-2 border-black rounded-xl font-semibold text-orange-600 mb-6">
-            ✨ AI Fashion Stylist
+            AI Fashion Stylist
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-tight text-black">
@@ -24,7 +23,6 @@ function Hero() {
             AI-powered virtual try-on technology.
           </p>
 
-          {/* Buttons */}
           <div className="flex flex-wrap justify-center lg:justify-start gap-5 mt-10">
 
             <button
@@ -71,7 +69,6 @@ function Hero() {
 
           </div>
 
-          {/* Stats */}
           <div className="flex flex-wrap justify-center lg:justify-start gap-6 mt-14">
 
             <div className="bg-white border-2 border-black rounded-2xl px-6 py-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -93,7 +90,6 @@ function Hero() {
 
         </div>
 
-        {/* Right Side */}
         <div className="relative flex justify-center">
 
           <div

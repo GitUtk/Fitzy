@@ -1,3 +1,6 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCloudArrowUp } from "@fortawesome/free-solid-svg-icons";
+
 function UploadSection() {
   return (
     <section className="px-4 md:px-10 py-20 bg-[#F8F6F2]">
@@ -7,7 +10,7 @@ function UploadSection() {
         <div className="text-center mb-12">
 
           <div className="inline-block px-4 py-2 bg-orange-100 border-2 border-black rounded-xl font-semibold text-orange-600">
-            📸 AI Fashion Preview
+            AI Fashion Preview
           </div>
 
           <h2 className="text-4xl md:text-5xl font-black text-black mt-6">
@@ -36,8 +39,8 @@ function UploadSection() {
           "
         >
 
-          <div className="text-5xl md:text-6xl mb-5">
-            📸
+          <div className="text-5xl md:text-6xl mb-5 text-orange-500">
+            <FontAwesomeIcon icon={faCloudArrowUp} />
           </div>
 
           <h3 className="text-2xl font-bold text-black mb-3">

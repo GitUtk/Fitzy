@@ -4,7 +4,6 @@ function About() {
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-        {/* Left Side */}
         <div>
 
           <div className="inline-block px-4 py-2 bg-orange-100 border-2 border-black rounded-xl font-semibold text-orange-600 mb-6">
@@ -30,7 +29,6 @@ function About() {
 
         </div>
 
-        {/* Right Side */}
         <div
           className="
           bg-white

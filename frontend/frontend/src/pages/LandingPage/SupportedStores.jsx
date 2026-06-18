@@ -15,7 +15,7 @@ function SupportedStores() {
         <div className="text-center mb-14">
 
           <div className="inline-block px-4 py-2 bg-orange-100 border-2 border-black rounded-xl font-semibold text-orange-600">
-            🛍 Our Partners
+            Our Partners
           </div>
 
           <h2 className="text-4xl md:text-5xl font-black text-black mt-6">
