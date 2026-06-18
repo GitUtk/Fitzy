@@ -61,23 +61,70 @@ function Register() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const validationErrors = validate();
+  const validationErrors = validate();
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
+
+  setErrors({});
+
+  try {
+    const response = await fetch(
+      "https://fitzy-f7uv.onrender.com/api/v1/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+
+  const loginResponse = await fetch(
+    "https://fitzy-f7uv.onrender.com/api/v1/login",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        username: formData.email,
+        password: formData.password,
+      }),
     }
+  );
 
+  const loginData = await loginResponse.json();
+
+  if (loginResponse.ok) {
     localStorage.setItem(
-      "fitzyUser",
-      JSON.stringify(formData)
+      "token",
+      loginData.access_token
     );
 
     navigate("/dashboard");
-  };
+  }
+} else {
+      alert(data.detail || "Registration failed");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Server error. Please try again.");
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#F8F6F2] flex items-center justify-center px-4 py-10">
@@ -139,7 +186,6 @@ function Register() {
             )}
           </div>
 
-          {/* Email */}
           <div>
             <label className="font-semibold block mb-2">
               Email *
@@ -173,7 +219,6 @@ function Register() {
             )}
           </div>
 
-          {/* Phone */}
           <div>
             <label className="font-semibold block mb-2">
               Phone Number *
@@ -207,7 +252,6 @@ function Register() {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label className="font-semibold block mb-2">
               Password *
@@ -241,7 +285,6 @@ function Register() {
             )}
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label className="font-semibold block mb-2">
               Confirm Password *

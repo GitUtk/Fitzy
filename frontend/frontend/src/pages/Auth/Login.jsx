@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
@@ -12,6 +12,14 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const validate = () => {
     const newErrors = {};
@@ -125,7 +133,7 @@ function Login() {
           <input
             type="email"
             placeholder="Enter your email"
-            className="w-full mt-2 border-2 border-black rounded-xl p-3 outline-none focus:border-orange-500"
+            className="w-full mt-2 border-2 border-black rounded-xl p-3 outline-none focus:border-orange-500 transition"
             value={form.email}
             onChange={(e) =>
               setForm({
@@ -150,7 +158,7 @@ function Login() {
           <input
             type="password"
             placeholder="Enter your password"
-            className="w-full mt-2 border-2 border-black rounded-xl p-3 outline-none focus:border-orange-500"
+            className="w-full mt-2 border-2 border-black rounded-xl p-3 outline-none focus:border-orange-500 transition"
             value={form.password}
             onChange={(e) =>
               setForm({
@@ -186,6 +194,7 @@ function Login() {
           hover:shadow-none
           transition-all
           disabled:opacity-50
+          disabled:cursor-not-allowed
           "
         >
           {loading ? "Logging In..." : "Login"}

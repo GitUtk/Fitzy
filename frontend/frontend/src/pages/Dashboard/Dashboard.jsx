@@ -20,7 +20,6 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-[#F8F6F2] p-6">
 
-      {/* Navbar */}
       <div className="flex justify-between items-center mb-10">
 
         <h1 className="text-3xl font-black">
@@ -39,7 +38,7 @@ function Dashboard() {
           border-2
           border-black
           font-bold
-          shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
+          shadow-[4px_4px_0px_black]
           hover:translate-x-[2px]
           hover:translate-y-[2px]
           hover:shadow-none
@@ -51,7 +50,7 @@ function Dashboard() {
 
       </div>
 
-      {/* Hero Card */}
+      {/* Dashboard Card */}
       <div
         className="
         max-w-5xl
@@ -61,7 +60,7 @@ function Dashboard() {
         border-black
         rounded-[30px]
         p-10
-        shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
+        shadow-[10px_10px_0px_black]
         "
       >
         <h2 className="text-5xl font-black mb-3">
@@ -105,22 +104,10 @@ function Dashboard() {
           </div>
 
         </div>
-
-        <div className="mt-10 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center">
-          <h3 className="text-2xl font-bold">
-            🚀 Coming Soon
-          </h3>
-
-          <p className="text-gray-600 mt-3">
-            Upload your photo and try clothes from Myntra,
-            Amazon, Flipkart, Savana and more using AI.
-          </p>
-        </div>
-
       </div>
 
     </div>
   );
 }
 
-export default Dashboard; 
+export default Dashboard;
