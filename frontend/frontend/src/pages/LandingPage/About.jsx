@@ -6,10 +6,7 @@ function About() {
 
         <div>
 
-          <div className="inline-block px-4 py-2 bg-orange-100 border-2 border-black rounded-xl font-semibold text-orange-600 mb-6">
-            🚀 About Us
-          </div>
-
+          
           <h2 className="text-4xl md:text-5xl font-black text-black mb-6">
             About Fitzy
           </h2>

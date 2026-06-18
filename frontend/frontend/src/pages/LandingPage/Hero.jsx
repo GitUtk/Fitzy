@@ -6,9 +6,7 @@ function Hero() {
 
         <div className="text-center lg:text-left">
 
-          <div className="inline-block px-4 py-2 bg-orange-100 border-2 border-black rounded-xl font-semibold text-orange-600 mb-6">
-            AI Fashion Stylist
-          </div>
+          
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-tight text-black">
             Try Clothes
@@ -117,24 +115,7 @@ function Hero() {
             />
           </div>
 
-          <div
-            className="
-            absolute
-            bottom-4
-            right-0
-            bg-orange-500
-            text-white
-            border-2
-            border-black
-            px-5
-            py-3
-            rounded-xl
-            font-semibold
-            shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
-            "
-          >
-            ✨ AI Recommended
-          </div>
+          
 
         </div>
 
