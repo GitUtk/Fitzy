@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import StatsCards from "./StatsCards";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import UploadSection from "./Uploadsection";
 import RecentLooks from "./RecentLooks";
 import Profile from "../Profile/Profile";
+import PremiumBanner from "./PremiumBanner";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
@@ -69,6 +71,7 @@ function Dashboard() {
           </div>
         ) : (
           <Profile />
+          
         )}
       </main>
     </div>
