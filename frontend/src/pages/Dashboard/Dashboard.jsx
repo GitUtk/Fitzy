@@ -5,16 +5,15 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import UploadSection from "./Uploadsection";
 import RecentLooks from "./RecentLooks";
+import Profile from "../Profile/Profile";
 
-const API_BASE_URL =
-  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:8000/api/v1"
-    : "https://fitzy-f7uv.onrender.com/api/v1";
+const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
 function Dashboard() {
   const navigate = useNavigate();
   const [looks, setLooks] = useState([]);
   const [loadingLooks, setLoadingLooks] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const fetchLooks = async () => {
     const token = localStorage.getItem("token");
@@ -54,23 +53,24 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F2] flex">
-
-      <Sidebar handleLogout={handleLogout} />
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        handleLogout={handleLogout}
+      />
 
       <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
-
         <Header />
 
-        <div className="grid xl:grid-cols-2 gap-5 mt-5">
-
-          <UploadSection onUploadSuccess={fetchLooks} />
-
-          <RecentLooks looks={looks} loading={loadingLooks} />
-
-        </div>
-
+        {activeTab === "dashboard" ? (
+          <div className="grid xl:grid-cols-2 gap-5 mt-5">
+            <UploadSection onUploadSuccess={fetchLooks} />
+            <RecentLooks looks={looks} loading={loadingLooks} />
+          </div>
+        ) : (
+          <Profile />
+        )}
       </main>
-
     </div>
   );
 }

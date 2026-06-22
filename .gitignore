@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+/frontend/node_modules/
+/node_modules/
+
+# Production/Build outputs
+dist/
+build/
+/frontend/dist/
+
+# Env / Secrets
+.env
+.env.local
+.env.*.local
+*.env
+backend/.env
+
+# Python caching & Virtual Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS Files
+.DS_Store
+Thumbs.db

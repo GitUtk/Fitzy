@@ -7,10 +7,7 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 
-const API_BASE_URL =
-  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:8000/api/v1"
-    : "https://fitzy-f7uv.onrender.com/api/v1";
+const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
 function UploadSection({ onUploadSuccess }) {
   const [dragActive, setDragActive] = useState(false);
@@ -181,11 +178,10 @@ function UploadSection({ onUploadSuccess }) {
         cursor-pointer
         transition-all
         relative
-        ${
-          dragActive
+        ${dragActive
             ? "border-orange-500 bg-orange-50"
             : "border-gray-300 bg-[#FFF7ED]"
-        }
+          }
         `}
       >
         <input

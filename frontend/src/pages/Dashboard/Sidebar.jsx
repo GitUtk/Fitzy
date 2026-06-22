@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import {
   FaHome,
   FaTshirt,
@@ -10,38 +9,37 @@ import {
   FaCrown,
 } from "react-icons/fa";
 
-function Sidebar({ handleLogout }) {
+function Sidebar({ activeTab, setActiveTab, handleLogout }) {
   const menuItems = [
     {
+      key: "dashboard",
       icon: <FaHome />,
       label: "Dashboard",
-      path: "/dashboard",
-      active: true,
     },
     {
+      key: "tryon",
       icon: <FaTshirt />,
       label: "Try On",
-      path: "/tryon",
     },
     {
+      key: "looks",
       icon: <FaHeart />,
       label: "My Looks",
-      path: "/looks",
     },
     {
+      key: "saved",
       icon: <FaBookmark />,
       label: "Saved",
-      path: "/saved",
     },
     {
+      key: "profile",
       icon: <FaUser />,
       label: "Profile",
-      path: "/profile",
     },
     {
+      key: "settings",
       icon: <FaCog />,
       label: "Settings",
-      path: "/settings",
     },
   ];
 
@@ -66,12 +64,18 @@ function Sidebar({ handleLogout }) {
         </h1>
 
         <div className="space-y-2">
-          {menuItems.map((item, index) => (
-            <Link
-              key={index}
-              to={item.path}
-            >
+          {menuItems.map((item, index) => {
+            const isActive = item.key === activeTab;
+            return (
               <button
+                key={index}
+                onClick={() => {
+                  if (item.key === "profile") {
+                    setActiveTab("profile");
+                  } else {
+                    setActiveTab("dashboard");
+                  }
+                }}
                 className={`
                 w-full
                 flex
@@ -84,9 +88,8 @@ function Sidebar({ handleLogout }) {
                 text-sm
                 font-medium
                 mb-2
-
                 ${
-                  item.active
+                  isActive
                     ? "bg-orange-100 border-2 border-black"
                     : "hover:bg-orange-50"
                 }
@@ -95,8 +98,8 @@ function Sidebar({ handleLogout }) {
                 {item.icon}
                 {item.label}
               </button>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -132,7 +135,7 @@ function Sidebar({ handleLogout }) {
           </h3>
 
           <p className="text-xs text-gray-600 mt-1">
-            Unlimited try-ons and advanced outfit recommendations.
+            Unlimited try-ons and outfit recommendations.
           </p>
 
           <button
