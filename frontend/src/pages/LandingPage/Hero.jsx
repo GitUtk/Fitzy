@@ -67,24 +67,7 @@ function Hero() {
 
           </div>
 
-          <div className="flex flex-wrap justify-center lg:justify-start gap-6 mt-14">
 
-            <div className="bg-white border-2 border-black rounded-2xl px-6 py-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <h3 className="text-3xl font-black text-black">50+</h3>
-              <p className="text-gray-600">Brands</p>
-            </div>
-
-            <div className="bg-white border-2 border-black rounded-2xl px-6 py-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <h3 className="text-3xl font-black text-black">10K+</h3>
-              <p className="text-gray-600">Outfits</p>
-            </div>
-
-            <div className="bg-white border-2 border-black rounded-2xl px-6 py-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <h3 className="text-3xl font-black text-black">95%</h3>
-              <p className="text-gray-600">Accuracy</p>
-            </div>
-
-          </div>
 
         </div>
 

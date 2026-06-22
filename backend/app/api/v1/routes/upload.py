@@ -9,9 +9,6 @@ router = APIRouter()
 
 @router.post("/image")
 async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    """
-    Receives a file upload, uploads it securely to Cloudinary, and returns the secure URL.
-    """
     try:
         file_bytes = await file.read()
         upload_result = await upload_image_to_cloudinary(file_bytes)
@@ -31,16 +28,12 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
 
 @router.post("/url")
 async def save_image_url(payload: dict = Body(...), current_user: dict = Depends(get_current_user)):
-    """
-    Saves an image URL to the database linked to the authenticated user.
-    """
     url = payload.get("url")
     if not url:
         raise HTTPException(status_code=400, detail="URL is required")
         
     user_id = current_user["id"]
     
-    # Save look in the 'looks' collection
     look = {
         "user_id": user_id,
         "image_url": url,
@@ -51,7 +44,6 @@ async def save_image_url(payload: dict = Body(...), current_user: dict = Depends
     look["id"] = str(result.inserted_id)
     look["_id"] = str(result.inserted_id)
     
-    # Also append to the user's own list of uploaded images
     await db["users"].update_one(
         {"_id": ObjectId(user_id)},
         {"$push": {"uploaded_images": url}}
@@ -61,9 +53,6 @@ async def save_image_url(payload: dict = Body(...), current_user: dict = Depends
 
 @router.get("/looks")
 async def get_user_looks(current_user: dict = Depends(get_current_user)):
-    """
-    Retrieves the list of saved looks for the currently authenticated user.
-    """
     user_id = current_user["id"]
     cursor = db["looks"].find({"user_id": user_id}).sort("created_at", -1)
     looks = await cursor.to_list(length=100)

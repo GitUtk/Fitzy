@@ -3,7 +3,6 @@ import cloudinary
 import cloudinary.uploader
 from app.core.config import CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 
-# Configure Cloudinary if valid credentials are provided
 if CLOUDINARY_CLOUD_NAME and CLOUDINARY_CLOUD_NAME != "your_cloud_name":
     cloudinary.config(
         cloud_name=CLOUDINARY_CLOUD_NAME,
@@ -13,10 +12,6 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_CLOUD_NAME != "your_cloud_name":
     )
 
 async def upload_image_to_cloudinary(file_bytes: bytes) -> dict:
-    """
-    Uploads file bytes to Cloudinary.
-    Falls back to a mock response with a placeholder fashion image if Cloudinary credentials are not set.
-    """
     if not CLOUDINARY_CLOUD_NAME or CLOUDINARY_CLOUD_NAME == "your_cloud_name":
         import uuid
         mock_id = f"mock_{uuid.uuid4().hex}"

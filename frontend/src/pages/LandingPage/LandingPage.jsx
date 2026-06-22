@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import NavBar from "./NavBar";
 import Hero from "./Hero";
 import UploadSection from "./UploadSection";
@@ -9,6 +11,15 @@ import Feedback from "./Feedback";
 import BrandTagline from "./BrandTagline";
 
 function LandingPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-[#F8F6F2] text-black overflow-x-hidden">
 

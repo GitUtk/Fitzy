@@ -3,10 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import StatsCards from "./Statscards";
 import UploadSection from "./Uploadsection";
 import RecentLooks from "./RecentLooks";
-import PremiumBanner from "./PremiumBanner";
 
 const API_BASE_URL =
   window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
@@ -63,8 +61,6 @@ function Dashboard() {
 
         <Header />
 
-        <StatsCards />
-
         <div className="grid xl:grid-cols-2 gap-5 mt-5">
 
           <UploadSection onUploadSuccess={fetchLooks} />
@@ -72,8 +68,6 @@ function Dashboard() {
           <RecentLooks looks={looks} loading={loadingLooks} />
 
         </div>
-
-        <PremiumBanner />
 
       </main>
 
