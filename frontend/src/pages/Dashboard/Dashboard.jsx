@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import StatsCards from "./StatsCards";
+import StatsCards from "./Statscards";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import UploadSection from "./Uploadsection";
