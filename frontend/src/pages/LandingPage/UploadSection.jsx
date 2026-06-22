@@ -1,7 +1,10 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudArrowUp } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
 
 function UploadSection() {
+  const navigate = useNavigate();
+
   return (
     <section className="px-4 md:px-10 py-20 bg-[#F8F6F2]">
 
@@ -25,6 +28,7 @@ function UploadSection() {
         </div>
 
         <div
+          onClick={() => navigate("/register")}
           className="
           max-w-3xl
           mx-auto
@@ -36,6 +40,9 @@ function UploadSection() {
           md:p-12
           text-center
           shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
+          cursor-pointer
+          hover:scale-[1.01]
+          transition-transform
           "
         >
 
@@ -52,6 +59,10 @@ function UploadSection() {
           </p>
 
           <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate("/register");
+            }}
             className="
             bg-orange-500
             text-white

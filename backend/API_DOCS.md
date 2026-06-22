@@ -124,6 +124,112 @@ Authorization: Bearer <access_token>
 | 401 | Invalid or missing token |
 | 404 | User not found |
 
+
+---
+
+### Upload Image to Cloudinary
+
+#### `POST /upload/image`
+
+Uploads an image file to Cloudinary. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+file: <binary image data>
+```
+
+**Response — 200 OK**
+```json
+{
+  "secure_url": "https://res.cloudinary.com/your_cloud_name/image/upload/...",
+  "public_id": "fitzy/...",
+  "is_mock": false
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 401 | Invalid or missing token |
+| 500 | Failed to upload image to Cloudinary |
+
+---
+
+### Save Image URL to Database
+
+#### `POST /upload/url`
+
+Saves an uploaded image URL to the database linked to the authenticated user.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request Body**
+```json
+{
+  "url": "https://res.cloudinary.com/your_cloud_name/image/upload/..."
+}
+```
+
+**Response — 200 OK**
+```json
+{
+  "status": "success",
+  "look": {
+    "id": "64f1c9c2a1b2c3d4e5f6g7h9",
+    "user_id": "64f1c9c2a1b2c3d4e5f6g7h8",
+    "image_url": "https://res.cloudinary.com/your_cloud_name/image/upload/...",
+    "created_at": "2026-06-22T16:45:00.123456"
+  }
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 400 | URL is required |
+| 401 | Invalid or missing token |
+
+---
+
+### Get User Looks
+
+#### `GET /upload/looks`
+
+Retrieves a list of saved looks for the authenticated user, ordered from newest to oldest.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response — 200 OK**
+```json
+[
+  {
+    "id": "64f1c9c2a1b2c3d4e5f6g7h9",
+    "user_id": "64f1c9c2a1b2c3d4e5f6g7h8",
+    "image_url": "https://res.cloudinary.com/your_cloud_name/image/upload/...",
+    "created_at": "2026-06-22T16:45:00.123456"
+  }
+]
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 401 | Invalid or missing token |
+
 ---
 
 ## Authentication Flow
@@ -131,7 +237,10 @@ Authorization: Bearer <access_token>
 ```
 1. POST /register        → create account
 2. POST /login            → exchange credentials for JWT
-3. GET  /me  (Bearer)     → access protected resource
+3. POST /upload/image     → upload image file to cloud
+4. POST /upload/url       → link image url to user profile
+5. GET  /upload/looks     → retrieve history of user looks
+6. GET  /me  (Bearer)     → access profile details
 ```
 
 ## Token Details
@@ -146,13 +255,26 @@ Authorization: Bearer <access_token>
 
 **Database:** MongoDB
 **Driver:** Motor (async)
+
 **Collection:** `users`
 
 ```json
 {
   "_id": "ObjectId",
   "email": "string",
-  "password": "hashed string"
+  "password": "hashed string",
+  "uploaded_images": ["string"]
+}
+```
+
+**Collection:** `looks`
+
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "string",
+  "image_url": "string",
+  "created_at": "ISODate"
 }
 ```
 
