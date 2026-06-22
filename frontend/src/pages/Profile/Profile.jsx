@@ -296,11 +296,15 @@ function Profile() {
             className="border-2 border-black rounded-xl p-3"
           >
             <option>Bottom Size</option>
+            <option>26</option>
             <option>28</option>
             <option>30</option>
             <option>32</option>
             <option>34</option>
             <option>36</option>
+            <option>38</option>
+            <option>40</option>
+            <option>42</option>
           </select>
 
           <input
