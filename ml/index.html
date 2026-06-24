@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Fashion Similarity Search</title>
+    <meta name="description" content="Upload any shirt or trouser image to search and find similar clothing items in our catalog using deep learning embeddings.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #F4F2EC;
+            --card-bg: #FFFFFF;
+            --text-color: #000000;
+            --border-width: 3px;
+            --border-color: #000000;
+            
+            /* Neobrutalism Accents */
+            --accent-yellow: #FFDE4D;
+            --accent-green: #39FF14;
+            --accent-orange: #FF6B35;
+            --accent-pink: #FF66C4;
+            --accent-blue: #38bdf8;
+            
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            
+            --shadow-btn: 3px 3px 0px #000000;
+            --shadow-card: 6px 6px 0px #000000;
+            --shadow-modal: 10px 10px 0px #000000;
+            
+            --transition: all 0.15s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 5rem;
+        }
+
+        /* Stark Grid Header */
+        header {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: var(--border-width) solid var(--border-color);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            background: var(--accent-yellow);
+            padding: 0.5rem;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 0px var(--border-color);
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 1.75rem;
+            letter-spacing: -0.03em;
+            text-transform: uppercase;
+        }
+
+        .header-tag {
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: #FFFFFF;
+            padding: 0.5rem 1rem;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-green);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 3rem auto 0;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+
+        @media (min-width: 900px) {
+            main {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        /* Hero banner in neobrutalism */
+        .hero-section {
+            grid-column: 1 / -1;
+            background: #FFFFFF;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            padding: 3rem 2rem;
+            border-radius: 4px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 120px;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--accent-yellow),
+                var(--accent-yellow) 10px,
+                #000000 10px,
+                #000000 20px
+            );
+            border-left: var(--border-width) solid var(--border-color);
+            opacity: 0.8;
+            display: none;
+        }
+
+        @media (min-width: 600px) {
+            .hero-section::before {
+                display: block;
+            }
+            .hero-section {
+                padding-right: 160px;
+            }
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 3rem;
+            line-height: 1;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: -0.04em;
+        }
+
+        h1 span {
+            background: var(--accent-pink);
+            padding: 0 0.5rem;
+            border: 2px solid var(--border-color);
+            box-shadow: 2px 2px 0px var(--border-color);
+            display: inline-block;
+        }
+
+        .subtitle {
+            font-size: 1.15rem;
+            max-width: 750px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        /* Cards structure */
+        .brutal-card {
+            background: var(--card-bg);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            border-radius: 4px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .brutal-card.hoverable:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: 9px 9px 0px var(--border-color);
+        }
+
+        .panel-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.35rem;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        /* File Upload */
+        .dropzone {
+            border: 3px dashed var(--border-color);
+            background: var(--bg-color);
+            border-radius: 4px;
+            padding: 3rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            transition: var(--transition);
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            background: var(--accent-yellow);
+        }
+
+        .dropzone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .dropzone-icon {
+            background: #FFFFFF;
+            border: 2px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 0px var(--border-color);
+        }
+
+        .dropzone-text {
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .dropzone-subtext {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(0,0,0,0.7);
+        }
+
+        /* Upload image preview */
+        .preview-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            border: var(--border-width) solid var(--border-color);
+            background: #FFFFFF;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-preview-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--accent-orange);
+            border: var(--border-width) solid var(--border-color);
+            color: #FFFFFF;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 0px var(--border-color);
+            z-index: 5;
+        }
+
+        .remove-preview-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--border-color);
+        }
+
+        .remove-preview-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px var(--border-color);
+        }
+
+        /* Scan Line */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background-color: var(--accent-pink);
+            border-bottom: 2px solid var(--border-color);
+            display: none;
+            pointer-events: none;
+            animation: moveScanLine 1.8s linear infinite;
+            z-index: 4;
+        }
+
+        @keyframes moveScanLine {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        /* Stark Buttons */
+        .brutal-btn {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            background: var(--accent-yellow);
+            color: var(--text-color);
+            padding: 0.9rem;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: var(--shadow-btn);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .brutal-btn:hover:not(:disabled) {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px var(--border-color);
+        }
+
+        .brutal-btn:active:not(:disabled) {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px var(--border-color);
+        }
+
+        .brutal-btn:disabled {
+            background: #EBEAE4;
+            color: #A09F9A;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Results Panel */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .results-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: var(--border-width) solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .results-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .results-info-badge {
+            font-size: 0.95rem;
+            font-weight: 700;
+            background: #FFFFFF;
+            padding: 0.4rem 0.8rem;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px var(--border-color);
+        }
+
+        /* Empty State */
+        .placeholder-results {
+            background: #FFFFFF;
+            border: var(--border-width) dashed var(--border-color);
+            border-radius: 4px;
+            padding: 6rem 2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            box-shadow: var(--shadow-card);
+        }
+
+        .placeholder-icon-wrapper {
+            background: var(--accent-orange);
+            padding: 1.25rem;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 3px 3px 0px var(--border-color);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .placeholder-text {
+            font-size: 1.15rem;
+            font-weight: 700;
+            max-width: 480px;
+            line-height: 1.4;
+            text-transform: uppercase;
+        }
+
+        /* Grid */
+        .results-grid {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 1.75rem;
+        }
+
+        @media (min-width: 600px) {
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .results-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Cards */
+        .result-card {
+            background: #FFFFFF;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .result-card:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 10px 10px 0px var(--border-color);
+        }
+
+        .result-img-box {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 0.85;
+            background: #EBEAE4;
+            border-bottom: var(--border-width) solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .result-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Flat Badges */
+        .match-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: var(--accent-green);
+            color: #000000;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 0.35rem 0.65rem;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            z-index: 2;
+        }
+
+        .category-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--accent-pink);
+            color: #000000;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 0.35rem 0.65rem;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px var(--border-color);
+            z-index: 2;
+        }
+
+        .rank-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: #000000;
+            color: #FFFFFF;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            z-index: 2;
+        }
+
+        .result-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            flex-grow: 1;
+        }
+
+        .result-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.15rem;
+            text-transform: uppercase;
+            line-height: 1.2;
+            color: var(--text-color);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.8rem;
+        }
+
+        .result-price-rating {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0.6rem 0;
+            margin-top: auto;
+        }
+
+        .price-text {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 1.35rem;
+        }
+
+        .rating-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            background: var(--accent-yellow);
+            border: 2px solid var(--border-color);
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Specs box */
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .spec-item {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .spec-lbl {
+            font-weight: 700;
+            text-transform: uppercase;
+            color: rgba(0,0,0,0.6);
+        }
+
+        .spec-val {
+            font-weight: 700;
+        }
+
+        /* Neobrutalist Progress Bar */
+        .similarity-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .similarity-lbl {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .similarity-track {
+            height: 12px;
+            background: #EBEAE4;
+            border: 2px solid var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .similarity-bar {
+            height: 100%;
+            background: var(--accent-pink);
+            border-right: 2px solid var(--border-color);
+            width: 0%;
+            transition: width 1s ease-in-out;
+        }
+
+        /* Skeletons */
+        .skeleton-card {
+            background: #FFFFFF;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            border-radius: 4px;
+            height: 430px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .skeleton-img {
+            aspect-ratio: 0.85;
+            background: #EBEAE4;
+            border-bottom: var(--border-width) solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-body {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            flex-grow: 1;
+        }
+
+        .skeleton-block {
+            background: #EBEAE4;
+            border-radius: 2px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .skeleton-block.title1 { width: 90%; height: 20px; }
+        .skeleton-block.title2 { width: 60%; height: 20px; }
+        .skeleton-block.spec { width: 50%; height: 14px; }
+        .skeleton-block.bar { width: 100%; height: 12px; }
+        .skeleton-block.price { width: 40%; height: 26px; }
+
+        /* Notification blocky toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--accent-orange);
+            color: #FFFFFF;
+            padding: 1.25rem 1.75rem;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: var(--shadow-card);
+            transform: translateY(150%);
+            transition: var(--transition);
+            z-index: 100;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        /* Modal neobrutalism details */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+            padding: 1rem;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #FFFFFF;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 4px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: var(--shadow-modal);
+            transform: scale(0.95);
+            transition: var(--transition);
+            display: grid;
+            grid-template-columns: 1fr;
+            overflow: hidden;
+        }
+
+        @media (min-width: 600px) {
+            .modal-card {
+                grid-template-columns: 270px 1fr;
+            }
+        }
+
+        .modal.show .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-img-container {
+            width: 100%;
+            height: 100%;
+            min-height: 270px;
+            position: relative;
+            background: #EBEAE4;
+            border-bottom: var(--border-width) solid var(--border-color);
+        }
+
+        @media (min-width: 600px) {
+            .modal-img-container {
+                border-bottom: none;
+                border-right: var(--border-width) solid var(--border-color);
+            }
+        }
+
+        .modal-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #FFFFFF;
+            border: var(--border-width) solid var(--border-color);
+            color: #000000;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 0px var(--border-color);
+            transition: var(--transition);
+            z-index: 10;
+        }
+
+        .modal-close:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--border-color);
+        }
+
+        .modal-close:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px var(--border-color);
+        }
+
+        .modal-body {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .modal-category {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent-pink);
+            background: #000;
+            padding: 0.25rem 0.5rem;
+            align-self: start;
+            border-radius: 2px;
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 1.45rem;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        .modal-price-rating {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0.75rem 0;
+        }
+
+        .modal-price {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 1.6rem;
+        }
+
+        .modal-specs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .modal-spec-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed rgba(0,0,0,0.15);
+            padding-bottom: 0.35rem;
+        }
+
+        .modal-spec-label {
+            font-weight: 700;
+            text-transform: uppercase;
+            color: rgba(0,0,0,0.6);
+        }
+
+        .modal-spec-val {
+            font-weight: 700;
+        }
+        
+        .similarity-score-text {
+            color: var(--accent-pink);
+            background: #000000;
+            padding: 0.1rem 0.4rem;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+
+    <main>
+        <section class="hero-section">
+            <h1>AI Similarity <span>Search Engine</span></h1>
+            <p class="subtitle">Upload a photo of a shirt, trouser, or t-shirt. Our pre-trained ResNet50 neural network will map its visual features and find the top 6 matches from the inventory.</p>
+        </section>
+
+        <!-- Left: Upload Panel -->
+        <section class="brutal-card">
+            <div class="panel-title">
+                <i data-lucide="image" style="width: 20px; height: 20px; stroke-width: 2.5;"></i>
+                <span>SOURCE IMAGE</span>
+            </div>
+            
+            <div class="dropzone" id="dropzone">
+                <input type="file" id="file-input" accept="image/*">
+                <div class="dropzone-content-wrapper" id="dropzone-content">
+                    <div class="dropzone-icon">
+                        <i data-lucide="upload" style="width: 32px; height: 32px; stroke-width: 2.5;"></i>
+                    </div>
+                    <div class="dropzone-text">DROP IMAGE HERE</div>
+                    <div class="dropzone-subtext">OR CLICK TO BROWSE</div>
+                </div>
+
+                <div class="preview-container" id="preview-container">
+                    <img src="" alt="Preview" class="preview-img" id="preview-img">
+                    <button class="remove-preview-btn" id="remove-preview-btn" title="Remove image">
+                        <i data-lucide="x" style="width: 18px; height: 18px; stroke-width: 2.5;"></i>
+                    </button>
+                    <div class="scan-line" id="scan-line"></div>
+                </div>
+            </div>
+
+            <button class="brutal-btn" id="btn-search" disabled>
+                <i data-lucide="search" style="width: 18px; height: 18px; stroke-width: 2.5;"></i>
+                <span>EXTRACT & MATCH</span>
+            </button>
+        </section>
+
+        <!-- Right: Results Panel -->
+        <section class="results-container">
+            <div class="results-header-bar">
+                <div class="results-title">
+                    <i data-lucide="database" style="width: 24px; height: 24px; stroke-width: 2.5;"></i>
+                    <span>SIMILAR PRODUCTS</span>
+                </div>
+                <div class="results-info-badge" id="results-info">0 FOUND</div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="placeholder-results" id="placeholder-results">
+                <div class="placeholder-icon-wrapper">
+                    <i data-lucide="help-circle" style="width: 36px; height: 36px; color: white; stroke-width: 2.5;"></i>
+                </div>
+                <div class="placeholder-text">
+                    No image uploaded. Import a photo and click EXTRACT & MATCH.
+                </div>
+            </div>
+
+            <!-- Loading State (6 Skeletons) -->
+            <div class="results-grid" id="loading-grid">
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-block title1"></div><div class="skeleton-block title2"></div><div class="skeleton-block spec"></div><div class="skeleton-block spec"></div><div class="skeleton-block bar"></div><div class="result-price-rating"><div class="skeleton-block price"></div></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-block title1"></div><div class="skeleton-block title2"></div><div class="skeleton-block spec"></div><div class="skeleton-block spec"></div><div class="skeleton-block bar"></div><div class="result-price-rating"><div class="skeleton-block price"></div></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-block title1"></div><div class="skeleton-block title2"></div><div class="skeleton-block spec"></div><div class="skeleton-block spec"></div><div class="skeleton-block bar"></div><div class="result-price-rating"><div class="skeleton-block price"></div></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-block title1"></div><div class="skeleton-block title2"></div><div class="skeleton-block spec"></div><div class="skeleton-block spec"></div><div class="skeleton-block bar"></div><div class="result-price-rating"><div class="skeleton-block price"></div></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-block title1"></div><div class="skeleton-block title2"></div><div class="skeleton-block spec"></div><div class="skeleton-block spec"></div><div class="skeleton-block bar"></div><div class="result-price-rating"><div class="skeleton-block price"></div></div></div></div>
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-block title1"></div><div class="skeleton-block title2"></div><div class="skeleton-block spec"></div><div class="skeleton-block spec"></div><div class="skeleton-block bar"></div><div class="result-price-rating"><div class="skeleton-block price"></div></div></div></div>
+            </div>
+
+            <!-- Actual Results Grid (6 Results) -->
+            <div class="results-grid" id="results-grid">
+                <!-- Javascript will inject 6 cards here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Blocky Toast Notification -->
+    <div class="toast" id="toast">
+        <i data-lucide="alert-triangle" style="width: 20px; height: 20px; stroke-width: 2.5;"></i>
+        <span id="toast-message">An error occurred</span>
+    </div>
+
+    <!-- Product Details Modal -->
+    <div class="modal" id="details-modal">
+        <div class="modal-card">
+            <div class="modal-img-container">
+                <img src="" alt="Product" class="modal-img" id="modal-img">
+                <button class="modal-close" id="modal-close">
+                    <i data-lucide="x" style="width: 18px; height: 18px; stroke-width: 2.5;"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-category" id="modal-category">SHIRT</div>
+                <h2 class="modal-title" id="modal-title">Cotton Stripes Shirt</h2>
+                
+                <div class="modal-price-rating">
+                    <div class="modal-price" id="modal-price">₹1,499</div>
+                    <div class="rating-badge" id="modal-rating">
+                        <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
+                        <span id="modal-rating-val">4.5</span>
+                    </div>
+                </div>
+
+                <div class="modal-specs">
+                    <div class="modal-spec-row">
+                        <span class="modal-spec-label">VISUAL ALIGNMENT:</span>
+                        <span class="modal-spec-val similarity-score-text" id="modal-similarity">98.5%</span>
+                    </div>
+                    <div class="modal-spec-row">
+                        <span class="modal-spec-label">COLOR:</span>
+                        <span class="modal-spec-val" id="modal-color">Pink</span>
+                    </div>
+                    <div class="modal-spec-row">
+                        <span class="modal-spec-label">FIT:</span>
+                        <span class="modal-spec-val" id="modal-fit">Regular Fit</span>
+                    </div>
+                    <div class="modal-spec-row">
+                        <span class="modal-spec-label">PATTERN:</span>
+                        <span class="modal-spec-val" id="modal-pattern">Stripes</span>
+                    </div>
+                    <div class="modal-spec-row">
+                        <span class="modal-spec-label">MATERIAL:</span>
+                        <span class="modal-spec-val" id="modal-material">Cotton</span>
+                    </div>
+                    <div class="modal-spec-row">
+                        <span class="modal-spec-label">PRODUCT ID:</span>
+                        <span class="modal-spec-val" id="modal-pid">987654321</span>
+                    </div>
+                </div>
+                <a id="modal-url" href="#" target="_blank" class="brutal-btn" style="text-align: center; text-decoration: none; margin-top: 1.25rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--accent-yellow); font-size: 1rem;">
+                    VIEW ON WEBSITE
+                    <i data-lucide="external-link" style="width: 16px; height: 16px; stroke-width: 2.5;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize lucide icons
+        lucide.createIcons();
+
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const dropzoneContent = document.getElementById('dropzone-content');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImg = document.getElementById('preview-img');
+        const removePreviewBtn = document.getElementById('remove-preview-btn');
+        const scanLine = document.getElementById('scan-line');
+        const btnSearch = document.getElementById('btn-search');
+        
+        const placeholderResults = document.getElementById('placeholder-results');
+        const loadingGrid = document.getElementById('loading-grid');
+        const resultsGrid = document.getElementById('results-grid');
+        const resultsInfo = document.getElementById('results-info');
+        
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        const detailsModal = document.getElementById('details-modal');
+        const modalClose = document.getElementById('modal-close');
+        
+        let selectedFile = null;
+
+        // Drag and drop events
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast("Only image files are supported (PNG, JPG, WEBP).");
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = () => {
+                previewImg.src = reader.result;
+                dropzoneContent.style.display = 'none';
+                previewContainer.style.display = 'block';
+                btnSearch.disabled = false;
+            };
+        }
+
+        removePreviewBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetUpload();
+        });
+
+        function resetUpload() {
+            selectedFile = null;
+            fileInput.value = '';
+            previewImg.src = '';
+            previewContainer.style.display = 'none';
+            dropzoneContent.style.display = 'flex';
+            btnSearch.disabled = true;
+            scanLine.style.display = 'none';
+        }
+
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Search trigger
+        btnSearch.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // Trigger scanner animation and show loading templates
+            scanLine.style.display = 'block';
+            btnSearch.disabled = true;
+            removePreviewBtn.style.display = 'none';
+            placeholderResults.style.display = 'none';
+            resultsGrid.style.display = 'none';
+            loadingGrid.style.display = 'grid';
+            resultsInfo.textContent = "EXTRACTING FEATURES...";
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || "Similarity search failed.");
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.results) {
+                    renderResults(data.results);
+                } else {
+                    throw new Error("Invalid response format.");
+                }
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || "Failed to complete search.");
+                placeholderResults.style.display = 'flex';
+                loadingGrid.style.display = 'none';
+                resultsInfo.textContent = "0 FOUND";
+            } finally {
+                scanLine.style.display = 'none';
+                btnSearch.disabled = false;
+                removePreviewBtn.style.display = 'flex';
+                loadingGrid.style.display = 'none';
+            }
+        });
+
+        function renderResults(results) {
+            resultsGrid.innerHTML = '';
+            
+            if (results.length === 0) {
+                placeholderResults.style.display = 'flex';
+                resultsGrid.style.display = 'none';
+                resultsInfo.textContent = "0 FOUND";
+                return;
+            }
+
+            results.forEach((prod) => {
+                const matchPercent = Math.max(0, Math.min(100, Math.round(prod.similarity * 1000) / 10));
+                
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.addEventListener('click', () => showProductDetails(prod));
+
+                const colorVal = prod.color || 'N/A';
+                const fitVal = prod.fit || 'N/A';
+                const patternVal = prod.pattern || 'N/A';
+                const ratingVal = prod.rating ? prod.rating.toFixed(1) : 'N/A';
+
+                card.innerHTML = `
+                    <div class="result-img-box">
+                        <img src="${prod.local_url}" alt="${prod.title}" class="result-image" onerror="this.src='${prod.image_url}'">
+                        <span class="match-badge">
+                            <i data-lucide="award" style="width: 12px; height: 12px; stroke-width: 2.5;"></i>
+                            ${matchPercent}%
+                        </span>
+                        <span class="category-badge">${prod.category}</span>
+                        <div class="rank-badge">#${prod.rank}</div>
+                    </div>
+                    <div class="result-body">
+                        <div class="result-title" title="${prod.title}">${prod.title}</div>
+                        
+                        <div class="similarity-container">
+                            <span class="similarity-lbl">Visual Match</span>
+                            <div class="similarity-track">
+                                <div class="similarity-bar" data-width="${matchPercent}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="specs-grid">
+                            <div class="spec-item" title="Color: ${colorVal}">
+                                <span class="spec-lbl">Color:</span>
+                                <span class="spec-val">${colorVal}</span>
+                            </div>
+                            <div class="spec-item" title="Fit: ${fitVal}">
+                                <span class="spec-lbl">Fit:</span>
+                                <span class="spec-val">${fitVal}</span>
+                            </div>
+                            <div class="spec-item" title="Pattern: ${patternVal}">
+                                <span class="spec-lbl">Pattern:</span>
+                                <span class="spec-val">${patternVal}</span>
+                            </div>
+                            <div class="spec-item" title="ID: ${prod.product_id}">
+                                <span class="spec-lbl">ID:</span>
+                                <span class="spec-val">${prod.product_id}</span>
+                            </div>
+                        </div>
+
+                        <div class="result-price-rating">
+                            <div class="price-text">₹${prod.price ? Math.round(prod.price).toLocaleString('en-IN') : 'N/A'}</div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <div class="rating-badge">
+                                    <i data-lucide="star" style="width: 12px; height: 12px; fill: currentColor; stroke-width: 2.5;"></i>
+                                    <span>${ratingVal}</span>
+                                </div>
+                                <a href="${prod.product_url}" target="_blank" class="brutal-btn" style="padding: 0.35rem 0.6rem; font-size: 0.8rem; text-decoration: none; background: var(--accent-yellow); box-shadow: 2px 2px 0px #000; border-width: 2px; display: flex; align-items: center; justify-content: center;" onclick="event.stopPropagation();">
+                                    <i data-lucide="external-link" style="width: 14px; height: 14px; stroke-width: 2.5;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                resultsGrid.appendChild(card);
+            });
+
+            placeholderResults.style.display = 'none';
+            resultsGrid.style.display = 'grid';
+            resultsInfo.textContent = `${results.length} FOUND`;
+            
+            // Re-render Lucide icons
+            lucide.createIcons();
+
+            // Animate progress bars
+            setTimeout(() => {
+                const bars = resultsGrid.querySelectorAll('.similarity-bar');
+                bars.forEach(bar => {
+                    const targetWidth = bar.getAttribute('data-width');
+                    bar.style.width = targetWidth;
+                });
+            }, 100);
+        }
+
+        // Detailed product modal handler
+        function showProductDetails(prod) {
+            const matchPercent = Math.max(0, Math.min(100, Math.round(prod.similarity * 1000) / 10));
+            
+            document.getElementById('modal-img').src = prod.local_url;
+            document.getElementById('modal-img').onerror = function() { this.src = prod.image_url; };
+            
+            document.getElementById('modal-category').textContent = prod.category;
+            document.getElementById('modal-title').textContent = prod.title;
+            document.getElementById('modal-price').textContent = prod.price ? `₹${Math.round(prod.price).toLocaleString('en-IN')}` : '₹ N/A';
+            document.getElementById('modal-rating-val').textContent = prod.rating ? prod.rating.toFixed(1) : 'N/A';
+            
+            document.getElementById('modal-similarity').textContent = `${matchPercent}% MATCH`;
+            document.getElementById('modal-color').textContent = prod.color || 'N/A';
+            document.getElementById('modal-fit').textContent = prod.fit || 'N/A';
+            document.getElementById('modal-pattern').textContent = prod.pattern || 'N/A';
+            document.getElementById('modal-material').textContent = prod.material || 'N/A';
+            document.getElementById('modal-pid').textContent = prod.product_id || 'N/A';
+            document.getElementById('modal-url').href = prod.product_url;
+
+            // Re-render Lucide icons in modal
+            lucide.createIcons();
+
+            detailsModal.classList.add('show');
+        }
+
+        modalClose.addEventListener('click', () => {
+            detailsModal.classList.remove('show');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === detailsModal) {
+                detailsModal.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
