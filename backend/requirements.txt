@@ -7,3 +7,8 @@ bcrypt
 python-multipart
 pydantic[email]
 cloudinary
+torch
+torchvision
+pandas
+numpy
+pillow
