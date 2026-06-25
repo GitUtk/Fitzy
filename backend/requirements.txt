@@ -11,3 +11,4 @@ onnxruntime
 pandas
 numpy
 pillow
+httpx

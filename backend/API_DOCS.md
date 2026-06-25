@@ -281,6 +281,41 @@ file: <binary image data>
 
 ---
 
+### AI Style Analysis & Roast
+
+#### `POST /recommendations/analyze`
+
+Processes an uploaded fashion/styling image and forwards it to the Gemini 2.5 Flash API to get honest, unfiltered feedback on styling, fit, colors, and a prescriptive set of improvements. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+file: <binary image data>
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "analysis": "### 1. The Brutal First Impression\n...\n### 2. What's Decent (If Anything)\n...\n### 3. The Fashion Disasters\n...\n### 4. Style Prescription\n..."
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 400 | Uploaded file must be an image |
+| 401 | Invalid or missing token |
+| 500 | Gemini API Key not configured or internal processing error |
+| 502 | Failed to parse analysis results from Gemini response |
+
+---
+
 ## Authentication Flow
 
 ```
@@ -289,8 +324,9 @@ file: <binary image data>
 3. POST /upload/image     → upload image file to cloud
 4. POST /upload/url       → link image url to user profile
 5. POST /recommendations/similar → extract image embedding and search similar outfits
-6. GET  /upload/looks     → retrieve history of user looks
-7. GET  /me  (Bearer)     → access profile details
+6. POST /recommendations/analyze → get raw, honest fashion and style feedback from Gemini
+7. GET  /upload/looks     → retrieve history of user looks
+8. GET  /me  (Bearer)     → access profile details
 ```
 
 ## Token Details
