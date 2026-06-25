@@ -2,17 +2,14 @@ import os
 import io
 import numpy as np
 import pandas as pd
-import torch
-import torchvision.models as models
-import torchvision.transforms as transforms
+import onnxruntime as ort
 from PIL import Image
 
 class RecommendationService:
     def __init__(self):
         self.df_labels = None
         self.db_embeddings_norm = None
-        self.feature_extractor = None
-        self.preprocess = None
+        self.ort_session = None
         self.initialized = False
 
     def initialize(self):
@@ -21,19 +18,21 @@ class RecommendationService:
 
         # Resolve paths relative to repository root
         current_file_path = os.path.abspath(__file__)
-        repo_root = current_file_path
-        # Go up 4 levels to get from backend/app/services/recommendation_service.py to Fitzy/
-        # services -> app -> backend -> repo root
-        for _ in range(4):
-            repo_root = os.path.dirname(repo_root)
+        services_dir = os.path.dirname(current_file_path)
+        app_dir = os.path.dirname(services_dir)
+        backend_dir = os.path.dirname(app_dir)
+        repo_root = os.path.dirname(backend_dir)
 
         csv_path = os.path.join(repo_root, "ml", "dataset", "labels.csv")
         embeddings_path = os.path.join(repo_root, "ml", "dataset", "embeddings.npy")
+        onnx_path = os.path.join(services_dir, "resnet50_features.onnx")
 
         if not os.path.exists(csv_path):
             raise RuntimeError(f"Metadata file not found at {csv_path}")
         if not os.path.exists(embeddings_path):
             raise RuntimeError(f"Embeddings file not found at {embeddings_path}")
+        if not os.path.exists(onnx_path):
+            raise RuntimeError(f"ONNX model file not found at {onnx_path}")
 
         self.df_labels = pd.read_csv(csv_path).fillna("")
         db_embeddings = np.load(embeddings_path)
@@ -43,31 +42,59 @@ class RecommendationService:
         norms = np.where(norms == 0, 1e-10, norms)
         self.db_embeddings_norm = db_embeddings / norms
 
-        # Load ResNet50 model for feature extraction
-        resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-        self.feature_extractor = torch.nn.Sequential(*(list(resnet.children())[:-1]))
-        self.feature_extractor.eval()
+        # Initialize CPU-optimized ONNX runtime session with single thread to minimize RAM usage
+        sess_options = ort.SessionOptions()
+        sess_options.intra_op_num_threads = 1
+        sess_options.inter_op_num_threads = 1
+        sess_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
-        self.preprocess = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406],
-                std=[0.229, 0.224, 0.225]
-            ),
-        ])
+        self.ort_session = ort.InferenceSession(onnx_path, sess_options, providers=['CPUExecutionProvider'])
         self.initialized = True
+
+    def preprocess_image(self, image: Image.Image) -> np.ndarray:
+        # Resize shorter side to 256
+        w, h = image.size
+        if w < h:
+            new_w = 256
+            new_h = int(h * (256 / w))
+        else:
+            new_h = 256
+            new_w = int(w * (256 / h))
+        image = image.resize((new_w, new_h), Image.BILINEAR)
+
+        # Center crop to 224x224
+        left = (new_w - 224) / 2
+        top = (new_h - 224) / 2
+        right = (new_w + 224) / 2
+        bottom = (new_h + 224) / 2
+        image = image.crop((left, top, right, bottom))
+
+        # Convert to numpy array and scale to [0, 1]
+        img_data = np.array(image).astype(np.float32) / 255.0
+
+        # Normalize with ImageNet mean and standard deviation
+        mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+        std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+        img_data = (img_data - mean) / std
+
+        # Transpose from (H, W, C) to (C, H, W) and add batch dimension: (1, C, H, W)
+        img_data = np.transpose(img_data, (2, 0, 1))
+        img_data = np.expand_dims(img_data, axis=0)
+        return img_data
 
     def find_similar(self, file_bytes: bytes, top_k: int = 6):
         self.initialize()
 
         image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
-        tensor = self.preprocess(image).unsqueeze(0)
+        img_data = self.preprocess_image(image)
 
-        with torch.no_grad():
-            feat = self.feature_extractor(tensor)
-            query_embedding = feat.squeeze().numpy()
+        # Run ONNX inference
+        inputs = {self.ort_session.get_inputs()[0].name: img_data}
+        outputs = self.ort_session.run(None, inputs)
+        
+        # ResNet50 feature extractor output shape is [1, 2048, 1, 1], squeeze it to 2048
+        query_embedding = np.squeeze(outputs[0])
 
         query_norm = np.linalg.norm(query_embedding)
         if query_norm == 0:

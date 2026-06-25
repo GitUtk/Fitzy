@@ -7,8 +7,7 @@ bcrypt
 python-multipart
 pydantic[email]
 cloudinary
-torch
-torchvision
+onnxruntime
 pandas
 numpy
 pillow
