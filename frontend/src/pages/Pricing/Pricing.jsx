@@ -129,7 +129,7 @@ export default function Pricing() {
       <div className="mx-auto max-w-7xl">
 
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border-2 border-black bg-black px-5 py-2 font-black shadow-[4px_4px_0px_black]">
+          <div className="inline-flex items-center gap-2 rounded-full border-2 border-black bg-black px-5 py-2 font-black text-white shadow-[4px_4px_0px_black]">
             <FaMagic />
             FITZY PREMIUM
           </div>

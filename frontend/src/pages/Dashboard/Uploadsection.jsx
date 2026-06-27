@@ -41,13 +41,19 @@ const UploadSection = ({ onUploadSuccess }) => {
     }
 
     setLoading(true);
-    setError("");
+    setError(null);
     setSuccess(false);
     setIsMock(false);
 
-    const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+    // const objectUrl = URL.createObjectURL(file);
+    // setPreview(objectUrl);
+const objectUrl = URL.createObjectURL(file);
 
+if (preview && preview.startsWith("blob:")) {
+  URL.revokeObjectURL(preview);
+}
+
+setPreview(objectUrl);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
