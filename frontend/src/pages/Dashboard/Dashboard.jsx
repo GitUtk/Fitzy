@@ -82,6 +82,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import StatsCards from "./Statscards";
 import Sidebar from "./Sidebar";
 import UploadSection from "./Uploadsection";
 import RecentLooks from "./RecentLooks";

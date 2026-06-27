@@ -7,3 +7,8 @@ bcrypt
 python-multipart
 pydantic[email]
 cloudinary
+onnxruntime
+pandas
+numpy
+pillow
+httpx

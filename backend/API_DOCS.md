@@ -228,7 +228,91 @@ Authorization: Bearer <access_token>
 
 | Status | Meaning |
 |---|---|
+---
+
+### Outfit Similarity Search
+
+#### `POST /recommendations/similar`
+
+Processes an uploaded image with a CPU-optimized ResNet-50 neural network to generate a 2048-dimensional feature embedding, then evaluates Cosine Similarity against the precomputed catalog embeddings index to return the top 6 closest matching product outfits. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+file: <binary image data>
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "rank": 1,
+      "image": "00320.webp",
+      "image_url": "https://d2wbq7o4qxi60y.cloudfront.net/8944667525282/1-800.webp",
+      "product_id": "8944667525282",
+      "title": "Cream Baggy Stretch Chinos",
+      "color": "['Cream']",
+      "fit": "Baggy Fit",
+      "pattern": "Plain",
+      "material": "Cotton Blend",
+      "price": 1799.0,
+      "rating": 4.6,
+      "category": "Trousers",
+      "product_url": "https://www.snitch.com/men-trousers/baggy-textured-stretch-chinos-4ch005-01/8944667525282/buy",
+      "similarity": 0.9416
+    }
+  ]
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 400 | Uploaded file must be an image |
 | 401 | Invalid or missing token |
+| 500 | Internal Server Error / embedding processing failure |
+
+---
+
+### AI Style Analysis & Roast
+
+#### `POST /recommendations/analyze`
+
+Processes an uploaded fashion/styling image and forwards it to the Gemini 2.5 Flash API to get honest, unfiltered feedback on styling, fit, colors, and a prescriptive set of improvements. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+file: <binary image data>
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "analysis": "### 1. The Brutal First Impression\n...\n### 2. What's Decent (If Anything)\n...\n### 3. The Fashion Disasters\n...\n### 4. Style Prescription\n..."
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 400 | Uploaded file must be an image |
+| 401 | Invalid or missing token |
+| 500 | Gemini API Key not configured or internal processing error |
+| 502 | Failed to parse analysis results from Gemini response |
 
 ---
 
@@ -239,8 +323,10 @@ Authorization: Bearer <access_token>
 2. POST /login            → exchange credentials for JWT
 3. POST /upload/image     → upload image file to cloud
 4. POST /upload/url       → link image url to user profile
-5. GET  /upload/looks     → retrieve history of user looks
-6. GET  /me  (Bearer)     → access profile details
+5. POST /recommendations/similar → extract image embedding and search similar outfits
+6. POST /recommendations/analyze → get raw, honest fashion and style feedback from Gemini
+7. GET  /upload/looks     → retrieve history of user looks
+8. GET  /me  (Bearer)     → access profile details
 ```
 
 ## Token Details
