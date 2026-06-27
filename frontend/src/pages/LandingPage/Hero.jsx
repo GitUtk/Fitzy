@@ -1,12 +1,10 @@
 function Hero() {
   return (
     <section className="min-h-[90vh] flex items-center px-4 md:px-10 lg:px-20 py-16 bg-[#F8F6F2]">
-
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
+        {/* Left Content */}
         <div className="text-center lg:text-left">
-
-          
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-black leading-tight text-black">
             Try Clothes
@@ -67,10 +65,9 @@ function Hero() {
 
           </div>
 
-
-
         </div>
 
+        {/* Right Video */}
         <div className="relative flex justify-center">
 
           <div
@@ -83,9 +80,11 @@ function Hero() {
             shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
             "
           >
-            <img
-              src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=80"
-              alt="fashion model"
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
               className="
               w-full
               max-w-[500px]
@@ -95,15 +94,17 @@ function Hero() {
               object-cover
               rounded-[24px]
               "
-            />
+            >
+              <source
+                src="/fitzy-fashion.mp4"
+                type="video/mp4"
+              />
+            </video>
           </div>
-
-          
 
         </div>
 
       </div>
-
     </section>
   );
 }
