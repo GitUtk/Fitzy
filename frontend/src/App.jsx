@@ -4,6 +4,7 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Pricing from "./pages/Pricing/Pricing";
+import StyleStudio from "./pages/StyleStudio/StyleStudio";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/style-studio" element={<StyleStudio />} />
     </Routes>
   );
 }
