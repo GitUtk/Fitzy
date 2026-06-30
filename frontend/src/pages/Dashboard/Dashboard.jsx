@@ -149,18 +149,18 @@ function Dashboard() {
           </div>
         );
 
-      case "tryon":
-        return (
-          <div className="max-w-3xl mx-auto space-y-8">
-            <div>
-              <h2 className="text-3xl font-black mb-2">Virtual Try-On</h2>
-              <p className="text-gray-500">
-                Upload a photo to see how outfits look on you.
-              </p>
-            </div>
-            <UploadSection onUploadSuccess={fetchLooks} />
-          </div>
-        );
+      // case "tryon":
+      //   return (
+      //     <div className="max-w-3xl mx-auto space-y-8">
+      //       <div>
+      //         <h2 className="text-3xl font-black mb-2">Virtual Try-On</h2>
+      //         <p className="text-gray-500">
+      //           Upload a photo to see how outfits look on you.
+      //         </p>
+      //       </div>
+      //       <UploadSection onUploadSuccess={fetchLooks} />
+      //     </div>
+      //   );
 
       case "mylooks":
         return (
