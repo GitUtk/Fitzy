@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 function AnalysisCard({ analysis, loading, error }) {
+
 
   return (
     <div className="mt-8 bg-white border-2 border-black rounded-3xl p-8 shadow-[8px_8px_0px_black]">
@@ -29,11 +31,25 @@ function AnalysisCard({ analysis, loading, error }) {
         </div>
       )}
 
-      {loading && (
+      {/* {loading && (
         <div className="border-2 border-dashed rounded-2xl p-12 text-center text-gray-500">
           Analyzing your outfit...
         </div>
-      )}
+      )} */}
+      {loading && !analysis && (
+  <div className="border-2 border-dashed rounded-2xl p-8 animate-pulse">
+    <div className="h-6 w-1/3 bg-gray-200 rounded mb-6"></div>
+
+    <div className="space-y-3">
+      <div className="h-4 bg-gray-200 rounded"></div>
+      <div className="h-4 bg-gray-200 rounded w-11/12"></div>
+      <div className="h-4 bg-gray-200 rounded w-10/12"></div>
+      <div className="h-4 bg-gray-200 rounded w-9/12"></div>
+      <div className="h-4 bg-gray-200 rounded w-11/12"></div>
+      <div className="h-4 bg-gray-200 rounded w-8/12"></div>
+    </div>
+  </div>
+)}
 
       {analysis && (
         <div className="bg-[#F8F6FF] border-2 border-black rounded-2xl p-6 whitespace-pre-wrap leading-8 text-black">

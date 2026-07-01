@@ -14,6 +14,7 @@ function StyleStudio() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [analysis, setAnalysis] = useState("");
+  const [displayAnalysis, setDisplayAnalysis] = useState("");
 const [products, setProducts] = useState([]);
 
 const [loadingAnalysis, setLoadingAnalysis] = useState(false);
@@ -41,24 +42,82 @@ const [productsError, setProductsError] = useState("");
     setAnalysisError("");
     setProductsError("");
 
-    try {
-      const [analysisData, similarData] = await Promise.all([
-        analyzeImage(selectedFile),
-        getSimilarProducts(selectedFile),
-      ]);
+//     try {
+//       const [analysisData, similarData] = await Promise.all([
+//         analyzeImage(selectedFile),
+//         getSimilarProducts(selectedFile),
+//       ]);
 
-      setAnalysis(analysisData.analysis || "");
+//       const fullAnalysis = analysisData.analysis || "";
 
-      setProducts(similarData.results || []);
-    } catch (err) {
+// setAnalysis(fullAnalysis);
+// setDisplayAnalysis("");
+
+// let index = 0;
+
+// const timer = setInterval(() => {
+//   index++;
+
+//   setDisplayAnalysis(fullAnalysis.slice(0, index));
+
+//   if (index >= fullAnalysis.length) {
+//     clearInterval(timer);
+//   }
+// }, 12);
+
+// setProducts(similarData.results || []);
+//     } catch (err) {
+//       console.error(err);
+
+//       setAnalysisError(err.message);
+//       setProductsError(err.message);
+//     } finally {
+//       setLoadingAnalysis(false);
+//       setLoadingProducts(false);
+//     }
+try {
+  // Analysis request
+  analyzeImage(selectedFile)
+    .then((analysisData) => {
+      const fullAnalysis = analysisData.analysis || "";
+
+      setDisplayAnalysis("");
+
+      let index = 0;
+
+      const timer = setInterval(() => {
+        index++;
+        setDisplayAnalysis(fullAnalysis.slice(0, index));
+
+        if (index >= fullAnalysis.length) {
+          clearInterval(timer);
+        }
+      }, 12);
+    })
+    .catch((err) => {
       console.error(err);
-
       setAnalysisError(err.message);
-      setProductsError(err.message);
-    } finally {
+    })
+    .finally(() => {
       setLoadingAnalysis(false);
+    });
+
+  // Similar products request
+  getSimilarProducts(selectedFile)
+    .then((similarData) => {
+      setProducts(similarData.results || []);
+    })
+    .catch((err) => {
+      console.error(err);
+      setProductsError(err.message);
+    })
+    .finally(() => {
       setLoadingProducts(false);
-    }
+    });
+
+} catch (err) {
+  console.error(err);
+}
   };
 
   processImage();
@@ -85,10 +144,10 @@ const [productsError, setProductsError] = useState("");
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <AnalysisCard
-            analysis={analysis}
-            loading={loadingAnalysis}
-            error={analysisError}
-          />
+  analysis={displayAnalysis}
+  loading={loadingAnalysis}
+  error={analysisError}
+/>
 
           <SimilarProducts
             products={products}
