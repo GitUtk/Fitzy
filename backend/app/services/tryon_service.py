@@ -1,4 +1,5 @@
 import io
+import base64
 import httpx
 from app.core.config import GRADIO_API_URL
 from app.services.cloudinary_service import upload_image_to_cloudinary
@@ -26,20 +27,48 @@ class TryOnService:
 
     async def generate_tryon(self, person_bytes: bytes, garment_url: str, category: str = "tops") -> str:
         garment_bytes = await self.download_image(garment_url)
-        person_file = await self.upload_to_gradio(person_bytes, "person.png")
-        garment_file = await self.upload_to_gradio(garment_bytes, "garment.png")
         
+        try:
+            person_file = await self.upload_to_gradio(person_bytes, "person.png")
+            garment_file = await self.upload_to_gradio(garment_bytes, "garment.png")
+        except Exception:
+            person_b64 = base64.b64encode(person_bytes).decode("utf-8")
+            garment_b64 = base64.b64encode(garment_bytes).decode("utf-8")
+            person_file = {
+                "path": "",
+                "url": "",
+                "orig_name": "person.png",
+                "size": len(person_bytes),
+                "mime_type": "image/png",
+                "data": f"data:image/png;base64,{person_b64}",
+                "meta": {"_type": "gradio.FileData"}
+            }
+            garment_file = {
+                "path": "",
+                "url": "",
+                "orig_name": "garment.png",
+                "size": len(garment_bytes),
+                "mime_type": "image/png",
+                "data": f"data:image/png;base64,{garment_b64}",
+                "meta": {"_type": "gradio.FileData"}
+            }
+
         url = f"{self.gradio_url}/api/predict"
         payload = {
             "data": [
                 person_file,
                 garment_file,
                 category,
-                20
+                "model",
+                1,
+                20,
+                1.5,
+                42,
+                True
             ]
         }
         
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=150.0) as client:
             response = await client.post(url, json=payload)
             if response.status_code != 200:
                 url_run = f"{self.gradio_url}/run/predict"
@@ -49,18 +78,32 @@ class TryOnService:
             
             res_json = response.json()
             try:
-                output_data = res_json["data"][0]
-                if isinstance(output_data, dict) and "path" in output_data:
-                    output_path = output_data["path"]
+                gallery = res_json["data"][0]
+                if isinstance(gallery, list) and len(gallery) > 0:
+                    first_img = gallery[0]
                 else:
-                    output_path = output_data
+                    first_img = gallery
                 
-                if output_path.startswith("http"):
-                    output_url = output_path
+                if isinstance(first_img, dict):
+                    if "image" in first_img and isinstance(first_img["image"], dict) and "path" in first_img["image"]:
+                        output_path = first_img["image"]["path"]
+                    elif "name" in first_img:
+                        output_path = first_img["name"]
+                    else:
+                        output_path = first_img.get("path")
                 else:
-                    output_url = f"{self.gradio_url}/file={output_path}"
+                    output_path = first_img
                 
-                output_bytes = await self.download_image(output_url)
+                if isinstance(output_path, str) and output_path.startswith("data:image/"):
+                    header, base64_str = output_path.split(",", 1)
+                    output_bytes = base64.b64decode(base64_str)
+                else:
+                    if output_path.startswith("http"):
+                        output_url = output_path
+                    else:
+                        output_url = f"{self.gradio_url}/file={output_path}"
+                    output_bytes = await self.download_image(output_url)
+                
                 cloudinary_res = await upload_image_to_cloudinary(output_bytes)
                 return cloudinary_res["secure_url"]
             except Exception as e:

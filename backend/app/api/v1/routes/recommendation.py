@@ -170,6 +170,7 @@ async def virtual_stylist(
 @router.post("/tryon")
 async def virtual_tryon(
     garment_url: str = Form(...),
+    gradio_url: str = Form(...),
     category: str = Form("tops"),
     file: UploadFile = File(None),
     person_url: str = Form(None),
@@ -185,7 +186,7 @@ async def virtual_tryon(
         else:
             raise HTTPException(status_code=400, detail="Either a file upload or person_url must be provided.")
         
-        tryon_image_url = await tryon_service.generate_tryon(person_bytes, garment_url, category)
+        tryon_image_url = await tryon_service.generate_tryon(person_bytes, garment_url, category, gradio_url=gradio_url)
         return {"success": True, "tryon_image_url": tryon_image_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
