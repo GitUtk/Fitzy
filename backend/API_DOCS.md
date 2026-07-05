@@ -316,6 +316,103 @@ file: <binary image data>
 
 ---
 
+### Virtual Stylist
+
+#### `POST /recommendations/stylist`
+
+Analyzes user photo and style prompt using Gemini to provide a critique, advice, and matches items from the product catalog. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+file: <binary image data>
+prompt: "Korean streetwear"
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "user_image_url": "https://res.cloudinary.com/...",
+  "critique": "Analysis of the current outfit...",
+  "advice": "General style recommendation...",
+  "recommendations": [
+    {
+      "category": "Shirts",
+      "search_query": "White Linen Shirt",
+      "reason": "Matches the aesthetic...",
+      "products": [
+        {
+          "image": "00014.webp",
+          "image_url": "https://...",
+          "product_id": "9224474132642",
+          "title": "Cotton Linen White Mandarin Shirt",
+          "color": "['White']",
+          "fit": "Regular Fit",
+          "pattern": "Plain",
+          "material": "Linen Blend",
+          "price": 1499.0,
+          "rating": 4.4,
+          "category": "Shirts",
+          "product_url": "https://..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 400 | Uploaded file must be an image |
+| 401 | Invalid or missing token |
+| 500 | Internal Server Error |
+
+---
+
+### Virtual Try-On
+
+#### `POST /recommendations/tryon`
+
+Generates virtual try-on visualization of a catalog product on the user's photo using Google Colab Gradio backend. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+garment_url: "https://..."
+category: "tops"
+file: <optional binary image data>
+person_url: <optional URL to user photo>
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "tryon_image_url": "https://res.cloudinary.com/..."
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 400 | Invalid file upload or missing inputs |
+| 401 | Invalid or missing token |
+| 500 | Try-on generation failure |
+
+---
+
 ## Authentication Flow
 
 ```
@@ -325,8 +422,10 @@ file: <binary image data>
 4. POST /upload/url       → link image url to user profile
 5. POST /recommendations/similar → extract image embedding and search similar outfits
 6. POST /recommendations/analyze → get raw, honest fashion and style feedback from Gemini
-7. GET  /upload/looks     → retrieve history of user looks
-8. GET  /me  (Bearer)     → access profile details
+7. POST /recommendations/stylist → get stylist recommendations based on style prompt
+8. POST /recommendations/tryon   → generate try-on visualization for recommended garment
+9. GET  /upload/looks     → retrieve history of user looks
+10. GET  /me  (Bearer)     → access profile details
 ```
 
 ## Token Details

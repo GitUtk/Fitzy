@@ -127,4 +127,43 @@ class RecommendationService:
             })
         return results
 
+    def search_products(self, query: str, category: str = None, limit: int = 5) -> list:
+        self.initialize()
+        df = self.df_labels.copy()
+        if category:
+            category_lower = category.lower()
+            if "t-shirt" in category_lower or "polo" in category_lower:
+                df = df[df["category"].str.lower().str.contains("t-shirt|polo", na=False)]
+            else:
+                df = df[df["category"].str.lower().str.contains(category_lower, na=False)]
+        keywords = [kw.lower() for kw in query.split() if len(kw) > 1]
+        scores = []
+        for idx, row in df.iterrows():
+            score = 0
+            text_to_search = f"{row['title']} {row['color']} {row['fit']} {row['pattern']} {row['material']} {row['category']}".lower()
+            for kw in keywords:
+                if kw in text_to_search:
+                    score += 1
+            scores.append((score, idx))
+        scores.sort(key=lambda x: x[0], reverse=True)
+        top_indices = [idx for score, idx in scores[:limit]]
+        results = []
+        for idx in top_indices:
+            row = self.df_labels.iloc[idx]
+            results.append({
+                "image": row["image"],
+                "image_url": row["image_url"],
+                "product_id": str(row["product_id"]),
+                "title": row["title"],
+                "color": row["color"],
+                "fit": row["fit"],
+                "pattern": row["pattern"],
+                "material": row["material"],
+                "price": float(row["price"]) if row["price"] != "" else None,
+                "rating": float(row["rating"]) if row["rating"] != "" else None,
+                "category": row["category"],
+                "product_url": row.get("product_url", "https://www.snitch.com/")
+            })
+        return results
+
 recommendation_service = RecommendationService()
