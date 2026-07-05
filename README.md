@@ -1,5 +1,7 @@
 # Fitzy Virtual Try-On
 
+![Fitzy Virtual Try-On Banner](assets/image.png)
+
 **See yourself wearing real, purchasable outfits before you buy.**
 
 ## Overview

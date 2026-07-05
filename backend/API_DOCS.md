@@ -127,11 +127,11 @@ Authorization: Bearer <access_token>
 
 ---
 
-### Upload Image to Cloudinary
+### Process Image (In-Memory Base64)
 
 #### `POST /upload/image`
 
-Uploads an image file to Cloudinary. Requires token authentication.
+Processes an uploaded image file and returns its local Base64 Data URI (does not upload to Cloudinary). Requires token authentication.
 
 **Headers**
 ```
@@ -146,9 +146,9 @@ file: <binary image data>
 **Response — 200 OK**
 ```json
 {
-  "secure_url": "https://res.cloudinary.com/your_cloud_name/image/upload/...",
-  "public_id": "fitzy/...",
-  "is_mock": false
+  "secure_url": "data:image/png;base64,iVBOR...",
+  "public_id": "local_data_uri",
+  "is_mock": true
 }
 ```
 
@@ -337,7 +337,7 @@ prompt: "Korean streetwear"
 ```json
 {
   "success": true,
-  "user_image_url": "https://res.cloudinary.com/...",
+  "user_image_url": "data:image/png;base64,... (local Base64 Data URI)",
   "critique": "Analysis of the current outfit...",
   "advice": "General style recommendation...",
   "recommendations": [
@@ -380,7 +380,7 @@ prompt: "Korean streetwear"
 
 #### `POST /recommendations/tryon`
 
-Generates virtual try-on visualization of a catalog product on the user's photo using Google Colab Gradio backend. Saves the resulting generated image url to the user's `looks` database history. Requires token authentication.
+Generates virtual try-on visualization of a catalog product on the user's photo using Google Colab Gradio backend. Saves the resulting generated image url to the user's `looks` database history. The `gradio_url` is provided dynamically in the frontend request body. Requires token authentication.
 
 **Headers**
 ```
@@ -390,6 +390,7 @@ Authorization: Bearer <access_token>
 **Request — multipart/form-data**
 ```
 garment_url: "https://..."
+gradio_url: "https://...gradio.live (provided dynamically in frontend request)"
 category: "tops"
 file: <optional binary image data>
 person_url: <optional URL to user photo>
@@ -418,7 +419,7 @@ person_url: <optional URL to user photo>
 ```
 1. POST /register        → create account
 2. POST /login            → exchange credentials for JWT
-3. POST /upload/image     → upload image file to cloud
+3. POST /upload/image     → convert uploaded image to local base64 Data URI
 4. POST /upload/url       → link image url to user profile
 5. POST /recommendations/similar → extract image embedding and search similar outfits
 6. POST /recommendations/analyze → get raw, honest fashion and style feedback from Gemini
