@@ -22,13 +22,13 @@ Virtual Try-On is an AI-powered fashion platform that helps users visualize outf
 * **Frontend:** React
 * **Backend:** FastAPI
 * **Database:** MongoDB, Cloudinary
-* **AI/ML:** Gemini, CLIP, FAISS, StableVITON
+* **AI/ML:** Gemini 2.5 Flash (Style Feedback), ResNet-50 & ONNX Runtime (Similarity Search), Fashn VTON & PyTorch (Virtual Try-On)
 
-## API Documentation
+## Documentation
 
-You can find the backend API documentation here:
-
-[View API Docs](backend/API_DOCS.md)
+* **Backend API Docs:** [backend/API_DOCS.md](backend/API_DOCS.md)
+* **Fashion Similarity Search Engine:** [ml/SIMILARITY_SEARCH.md](ml/SIMILARITY_SEARCH.md)
+* **FashnVTON Try-On Optimization Report:** [ml/OPTIMIZATION_REPORT.md](ml/OPTIMIZATION_REPORT.md)
 
 
 ## Contributors

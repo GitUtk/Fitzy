@@ -23,7 +23,7 @@ The engine operates in three main phases: **Metadata & Image Scraping**, **Featu
 │   ├── images/         # Storage for the 900 downloaded JPG/WEBP images
 │   ├── labels.csv      # Unified product metadata and direct purchase links
 │   └── embeddings.npy  # Saved numpy array of shape (900, 2048)
-└── README.md           # Documentation & Architecture Overview
+└── SIMILARITY_SEARCH.md # Documentation & Architecture Overview
 ```
 
 ---
