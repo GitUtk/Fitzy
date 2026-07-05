@@ -1,12 +1,14 @@
 import base64
 import json
 import httpx
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from app.api.deps import get_current_user
 from app.services.recommendation_service import recommendation_service
 from app.services.tryon_service import tryon_service
 from app.services.cloudinary_service import upload_image_to_cloudinary
 from app.core.config import GEMINI_API_KEY
+from app.core.database import db
 
 router = APIRouter()
 
@@ -89,10 +91,9 @@ async def virtual_stylist(
         raise HTTPException(status_code=500, detail="Gemini API Key is not configured.")
     try:
         file_bytes = await file.read()
-        cloudinary_res = await upload_image_to_cloudinary(file_bytes)
-        user_image_url = cloudinary_res["secure_url"]
         base64_data = base64.b64encode(file_bytes).decode("utf-8")
         mime_type = file.content_type
+        user_image_url = f"data:{mime_type};base64,{base64_data}"
         
         gemini_prompt = (
             f"You are a professional fashion stylist. Analyze the user's appearance in the image and their requested style prompt: '{prompt}'. "
@@ -187,6 +188,15 @@ async def virtual_tryon(
             raise HTTPException(status_code=400, detail="Either a file upload or person_url must be provided.")
         
         tryon_image_url = await tryon_service.generate_tryon(person_bytes, garment_url, category, gradio_url=gradio_url)
+        
+        user_id = current_user["id"]
+        look = {
+            "user_id": user_id,
+            "image_url": tryon_image_url,
+            "created_at": datetime.utcnow()
+        }
+        await db["looks"].insert_one(look)
+        
         return {"success": True, "tryon_image_url": tryon_image_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

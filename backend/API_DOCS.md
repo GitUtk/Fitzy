@@ -205,7 +205,7 @@ Authorization: Bearer <access_token>
 
 #### `GET /upload/looks`
 
-Retrieves a list of saved looks for the authenticated user, ordered from newest to oldest.
+Retrieves a list of virtual try-on generated looks for the authenticated user, ordered from newest to oldest.
 
 **Headers**
 ```
@@ -380,7 +380,7 @@ prompt: "Korean streetwear"
 
 #### `POST /recommendations/tryon`
 
-Generates virtual try-on visualization of a catalog product on the user's photo using Google Colab Gradio backend. Requires token authentication.
+Generates virtual try-on visualization of a catalog product on the user's photo using Google Colab Gradio backend. Saves the resulting generated image url to the user's `looks` database history. Requires token authentication.
 
 **Headers**
 ```

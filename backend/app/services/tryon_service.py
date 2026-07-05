@@ -1,6 +1,9 @@
 import io
-import base64
+import os
+import tempfile
 import httpx
+from gradio_client import Client, handle_file
+from fastapi.concurrency import run_in_threadpool
 from app.core.config import GRADIO_API_URL
 from app.services.cloudinary_service import upload_image_to_cloudinary
 
@@ -15,98 +18,56 @@ class TryOnService:
                 return response.content
             raise RuntimeError(f"Failed to download image from {url}")
 
-    async def upload_to_gradio(self, file_bytes: bytes, filename: str) -> dict:
-        url = f"{self.gradio_url}/upload"
-        files = {"files": (filename, file_bytes, "image/png")}
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, files=files)
-            if response.status_code == 200:
-                data = response.json()
-                return {"path": data[0], "meta": {"_type": "gradio.FileData"}}
-            raise RuntimeError(f"Gradio upload failed: {response.text}")
-
-    async def generate_tryon(self, person_bytes: bytes, garment_url: str, category: str = "tops") -> str:
+    async def generate_tryon(self, person_bytes: bytes, garment_url: str, category: str = "tops", gradio_url: str = None) -> str:
+        active_url = (gradio_url or self.gradio_url).rstrip("/")
         garment_bytes = await self.download_image(garment_url)
-        
-        try:
-            person_file = await self.upload_to_gradio(person_bytes, "person.png")
-            garment_file = await self.upload_to_gradio(garment_bytes, "garment.png")
-        except Exception:
-            person_b64 = base64.b64encode(person_bytes).decode("utf-8")
-            garment_b64 = base64.b64encode(garment_bytes).decode("utf-8")
-            person_file = {
-                "path": "",
-                "url": "",
-                "orig_name": "person.png",
-                "size": len(person_bytes),
-                "mime_type": "image/png",
-                "data": f"data:image/png;base64,{person_b64}",
-                "meta": {"_type": "gradio.FileData"}
-            }
-            garment_file = {
-                "path": "",
-                "url": "",
-                "orig_name": "garment.png",
-                "size": len(garment_bytes),
-                "mime_type": "image/png",
-                "data": f"data:image/png;base64,{garment_b64}",
-                "meta": {"_type": "gradio.FileData"}
-            }
 
-        url = f"{self.gradio_url}/api/predict"
-        payload = {
-            "data": [
-                person_file,
-                garment_file,
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as person_tmp:
+            person_tmp.write(person_bytes)
+            person_tmp_path = person_tmp.name
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as garment_tmp:
+            garment_tmp.write(garment_bytes)
+            garment_tmp_path = garment_tmp.name
+
+        try:
+            client = Client(active_url)
+            result = await run_in_threadpool(
+                client.predict,
+                handle_file(person_tmp_path),
+                handle_file(garment_tmp_path),
                 category,
                 "model",
                 1,
                 20,
                 1.5,
                 42,
-                True
-            ]
-        }
-        
-        async with httpx.AsyncClient(timeout=150.0) as client:
-            response = await client.post(url, json=payload)
-            if response.status_code != 200:
-                url_run = f"{self.gradio_url}/run/predict"
-                response = await client.post(url_run, json=payload)
-                if response.status_code != 200:
-                    raise RuntimeError(f"Gradio prediction failed: {response.text}")
-            
-            res_json = response.json()
-            try:
-                gallery = res_json["data"][0]
-                if isinstance(gallery, list) and len(gallery) > 0:
-                    first_img = gallery[0]
+                True,
+                api_name="/predict"
+            )
+
+            if isinstance(result, list) and len(result) > 0:
+                first_item = result[0]
+                if isinstance(first_item, dict):
+                    output_path = first_item.get("image") or first_item.get("path")
                 else:
-                    first_img = gallery
-                
-                if isinstance(first_img, dict):
-                    if "image" in first_img and isinstance(first_img["image"], dict) and "path" in first_img["image"]:
-                        output_path = first_img["image"]["path"]
-                    elif "name" in first_img:
-                        output_path = first_img["name"]
-                    else:
-                        output_path = first_img.get("path")
-                else:
-                    output_path = first_img
-                
-                if isinstance(output_path, str) and output_path.startswith("data:image/"):
-                    header, base64_str = output_path.split(",", 1)
-                    output_bytes = base64.b64decode(base64_str)
-                else:
-                    if output_path.startswith("http"):
-                        output_url = output_path
-                    else:
-                        output_url = f"{self.gradio_url}/file={output_path}"
-                    output_bytes = await self.download_image(output_url)
-                
-                cloudinary_res = await upload_image_to_cloudinary(output_bytes)
-                return cloudinary_res["secure_url"]
-            except Exception as e:
-                raise RuntimeError(f"Failed to parse Gradio response: {str(e)}. Response: {res_json}")
+                    output_path = first_item
+            else:
+                output_path = result
+
+            with open(output_path, "rb") as f:
+                output_bytes = f.read()
+
+            cloudinary_res = await upload_image_to_cloudinary(output_bytes)
+            return cloudinary_res["secure_url"]
+
+        except Exception as e:
+            raise RuntimeError(f"Gradio try-on execution failed: {str(e)}")
+
+        finally:
+            if os.path.exists(person_tmp_path):
+                os.remove(person_tmp_path)
+            if os.path.exists(garment_tmp_path):
+                os.remove(garment_tmp_path)
 
 tryon_service = TryOnService()
