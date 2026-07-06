@@ -378,9 +378,30 @@ prompt: "Korean streetwear"
 
 ### Virtual Try-On
 
+#### `POST /recommendations/tryon/url`
+
+Registers or updates the newest Gradio live URL from Google Colab in-memory on the backend. This allows the try-on engine to use the active Colab workspace without frontend transmission. No authentication required.
+
+**Request — application/json**
+```json
+{
+  "gradio_url": "https://28fdcf3457b7a58f34.gradio.live"
+}
+```
+
+**Response — 200 OK**
+```json
+{
+  "status": "success",
+  "gradio_url": "https://28fdcf3457b7a58f34.gradio.live"
+}
+```
+
+---
+
 #### `POST /recommendations/tryon`
 
-Generates virtual try-on visualization of a catalog product on the user's photo using Google Colab Gradio backend. Saves the resulting generated image url to the user's `looks` database history. The `gradio_url` is provided dynamically in the frontend request body. Requires token authentication.
+Generates virtual try-on visualization of a catalog product on the user's photo using the Google Colab Gradio backend (using the currently registered in-memory Gradio live link). Saves the resulting generated image url to the user's `looks` database history. Requires token authentication.
 
 **Headers**
 ```
@@ -390,7 +411,6 @@ Authorization: Bearer <access_token>
 **Request — multipart/form-data**
 ```
 garment_url: "https://..."
-gradio_url: "https://...gradio.live (provided dynamically in frontend request)"
 category: "tops"
 file: <optional binary image data>
 person_url: <optional URL to user photo>
@@ -424,9 +444,10 @@ person_url: <optional URL to user photo>
 5. POST /recommendations/similar → extract image embedding and search similar outfits
 6. POST /recommendations/analyze → get raw, honest fashion and style feedback from Gemini
 7. POST /recommendations/stylist → get stylist recommendations based on style prompt
-8. POST /recommendations/tryon   → generate try-on visualization for recommended garment
-9. GET  /upload/looks     → retrieve history of user looks
-10. GET  /me  (Bearer)     → access profile details
+8. POST /recommendations/tryon/url → register/update the newest Colab Gradio share URL in-memory
+9. POST /recommendations/tryon   → generate try-on visualization for recommended garment
+10. GET  /upload/looks     → retrieve history of user looks
+11. GET  /me  (Bearer)     → access profile details
 ```
 
 ## Token Details

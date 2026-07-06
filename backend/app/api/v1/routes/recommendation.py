@@ -2,7 +2,7 @@ import base64
 import json
 import httpx
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, Body
 from app.api.deps import get_current_user
 from app.services.recommendation_service import recommendation_service
 from app.services.tryon_service import tryon_service
@@ -168,10 +168,17 @@ async def virtual_stylist(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/tryon/url")
+async def update_gradio_url(payload: dict = Body(...)):
+    url = payload.get("gradio_url")
+    if not url:
+        raise HTTPException(status_code=400, detail="gradio_url is required")
+    tryon_service.gradio_url = url.rstrip("/")
+    return {"status": "success", "gradio_url": tryon_service.gradio_url}
+
 @router.post("/tryon")
 async def virtual_tryon(
     garment_url: str = Form(...),
-    gradio_url: str = Form(...),
     category: str = Form("tops"),
     file: UploadFile = File(None),
     person_url: str = Form(None),
@@ -187,7 +194,7 @@ async def virtual_tryon(
         else:
             raise HTTPException(status_code=400, detail="Either a file upload or person_url must be provided.")
         
-        tryon_image_url = await tryon_service.generate_tryon(person_bytes, garment_url, category, gradio_url=gradio_url)
+        tryon_image_url = await tryon_service.generate_tryon(person_bytes, garment_url, category)
         
         user_id = current_user["id"]
         look = {
