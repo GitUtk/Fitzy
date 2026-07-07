@@ -369,14 +369,6 @@ function Dashboard() {
         return (
           <div className="max-w-7xl mx-auto space-y-8">
             <UploadSection onUploadSuccess={fetchLooks} variant="dashboard" />
-
-            <RecentLooks
-              looks={looks}
-              loading={loadingLooks}
-              limit={3}
-              title="Recent Try Ons"
-              subtitle="Your latest AI generated outfits"
-            />
           </div>
         );
 
@@ -406,7 +398,7 @@ function Dashboard() {
               looks={looks}
               loading={loadingLooks}
               title="My Looks"
-              subtitle="All your generated outfits in one place."
+              subtitle="Outfits you have tried on appear here."
             />
           </div>
         );
