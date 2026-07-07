@@ -420,17 +420,20 @@ function RecentLooks({
   looks = [],
   loading = false,
   limit,
-  title = "Recent Try Ons",
-  subtitle = "Your latest AI generated outfits",
+  title = "My Looks",
+  subtitle = "Outfits you have tried on appear here.",
 }) {
   const [savedLooks, setSavedLooks] = useState([]);
 
   useEffect(() => {
-    const saved = JSON.parse(
-      localStorage.getItem("savedLooks") || "[]"
-    );
+    const refreshSavedLooks = () => {
+      const saved = JSON.parse(localStorage.getItem("savedLooks") || "[]");
+      setSavedLooks(saved);
+    };
 
-    setSavedLooks(saved);
+    refreshSavedLooks();
+    window.addEventListener("storage", refreshSavedLooks);
+    return () => window.removeEventListener("storage", refreshSavedLooks);
   }, []);
 
   const toggleSave = (id) => {
@@ -515,7 +518,7 @@ function RecentLooks({
             </h3>
 
             <p className="mt-2 text-sm text-gray-500 text-center px-6">
-              Generate your first AI outfit
+              Try on your first outfit to see it here
             </p>
           </div>
         ))}
@@ -622,7 +625,7 @@ function RecentLooks({
               </div>
 
               <p className="text-gray-500 text-sm mt-2">
-                Generated using Fitzy AI Virtual Try-On
+                Outfit tried on using Fitzy Virtual Try-On
               </p>
 
               <div className="flex gap-3 mt-5">
