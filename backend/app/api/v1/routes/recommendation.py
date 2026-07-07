@@ -168,13 +168,18 @@ async def virtual_stylist(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/tryon/url")
-async def update_gradio_url(payload: dict = Body(...)):
+@router.post("/fetchGradio")
+async def fetch_gradio(payload: dict = Body(...)):
     url = payload.get("gradio_url")
     if not url:
         raise HTTPException(status_code=400, detail="gradio_url is required")
-    tryon_service.gradio_url = url.rstrip("/")
-    return {"status": "success", "gradio_url": tryon_service.gradio_url}
+    # Save the link in mongodb database, keeping a single entry only
+    await db["gradio_config"].delete_many({})
+    await db["gradio_config"].insert_one({
+        "gradio_url": url.rstrip("/"),
+        "created_at": datetime.utcnow()
+    })
+    return {"status": "success", "gradio_url": url.rstrip("/")}
 
 @router.post("/tryon")
 async def virtual_tryon(

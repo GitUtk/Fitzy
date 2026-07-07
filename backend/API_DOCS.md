@@ -378,9 +378,9 @@ prompt: "Korean streetwear"
 
 ### Virtual Try-On
 
-#### `POST /recommendations/tryon/url`
+#### `POST /recommendations/fetchGradio`
 
-Registers or updates the newest Gradio live URL from Google Colab in-memory on the backend. This allows the try-on engine to use the active Colab workspace without frontend transmission. No authentication required.
+Registers or updates the newest Gradio live URL from Google Colab in the MongoDB database (replacing any previous link). This allows the try-on engine to use the active Colab workspace. No authentication required.
 
 **Request — application/json**
 ```json
@@ -444,7 +444,7 @@ person_url: <optional URL to user photo>
 5. POST /recommendations/similar → extract image embedding and search similar outfits
 6. POST /recommendations/analyze → get raw, honest fashion and style feedback from Gemini
 7. POST /recommendations/stylist → get stylist recommendations based on style prompt
-8. POST /recommendations/tryon/url → register/update the newest Colab Gradio share URL in-memory
+8. POST /recommendations/fetchGradio → register/update the newest Colab Gradio share URL in MongoDB
 9. POST /recommendations/tryon   → generate try-on visualization for recommended garment
 10. GET  /upload/looks     → retrieve history of user looks
 11. GET  /me  (Bearer)     → access profile details

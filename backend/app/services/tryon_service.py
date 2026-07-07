@@ -4,12 +4,12 @@ import tempfile
 import httpx
 from gradio_client import Client, handle_file
 from fastapi.concurrency import run_in_threadpool
-from app.core.config import GRADIO_API_URL
+from app.core.database import db
 from app.services.cloudinary_service import upload_image_to_cloudinary
 
 class TryOnService:
     def __init__(self):
-        self.gradio_url = GRADIO_API_URL.rstrip("/")
+        pass
 
     async def download_image(self, url: str) -> bytes:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -18,8 +18,11 @@ class TryOnService:
                 return response.content
             raise RuntimeError(f"Failed to download image from {url}")
 
-    async def generate_tryon(self, person_bytes: bytes, garment_url: str, category: str = "tops", gradio_url: str = None) -> str:
-        active_url = (gradio_url or self.gradio_url).rstrip("/")
+    async def generate_tryon(self, person_bytes: bytes, garment_url: str, category: str = "tops") -> str:
+        gradio_doc = await db["gradio_config"].find_one()
+        if not gradio_doc or not gradio_doc.get("gradio_url"):
+            raise RuntimeError("Gradio live URL is not registered in the database. Please post the URL to /fetchGradio first.")
+        active_url = gradio_doc["gradio_url"].rstrip("/")
         garment_bytes = await self.download_image(garment_url)
 
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as person_tmp:
