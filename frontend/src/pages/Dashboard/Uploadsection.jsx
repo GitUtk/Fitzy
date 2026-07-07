@@ -21,25 +21,37 @@ const UploadSection = ({ onUploadSuccess }) => {
   const [recommendations, setRecommendations] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showTryOn, setShowTryOn] = useState(false);
+  const [tryOnLoading, setTryOnLoading] = useState(false);
+  const [tryOnImageUrl, setTryOnImageUrl] = useState("");
   const [analysis, setAnalysis] = useState("");
   const fileInputRef = useRef(null);
 
-  const saveTriedOnLook = (product) => {
+  const inferCategory = (category) => {
+    const normalized = (category || "").toLowerCase();
+    if (normalized.includes("shirt") || normalized.includes("top") || normalized.includes("tee") || normalized.includes("blouse")) return "tops";
+    if (normalized.includes("pant") || normalized.includes("jean") || normalized.includes("trouser") || normalized.includes("short")) return "bottoms";
+    if (normalized.includes("shoe") || normalized.includes("sneaker") || normalized.includes("boot")) return "shoes";
+    if (normalized.includes("dress") || normalized.includes("gown")) return "dresses";
+    if (normalized.includes("coat") || normalized.includes("jacket") || normalized.includes("blazer")) return "outerwear";
+    return "tops";
+  };
+
+  const saveTriedOnLook = (product, generatedImageUrl = "") => {
     if (!product) return;
 
     const savedLooks = JSON.parse(localStorage.getItem("savedLooks") || "[]");
     const newEntry = {
       id: `${product.product_id || product.title || Date.now()}-${Date.now()}`,
-      image_url: product.image_url || product.image || product.product_url,
+      image_url: generatedImageUrl || product.image_url || product.image || product.product_url,
       created_at: new Date().toISOString(),
       title: product.title || "Tried-on outfit",
       category: product.category || "Fashion pick",
     };
 
     const exists = savedLooks.some((look) => {
-      const existingId = look?.id || look?.product_id || look?.title;
-      const incomingId = newEntry.id || product.product_id || product.title;
-      return existingId === incomingId;
+      const existingImage = look?.image_url || look?.image || look?.product_url || look?.url || "";
+      const incomingImage = newEntry.image_url || "";
+      return look?.id === newEntry.id || (existingImage && existingImage === incomingImage);
     });
 
     if (!exists) {
@@ -48,6 +60,55 @@ const UploadSection = ({ onUploadSuccess }) => {
       if (onUploadSuccess) {
         onUploadSuccess();
       }
+    }
+  };
+
+  const handleTryOnPreview = async () => {
+    if (!selectedProduct) return;
+
+    setTryOnLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("You must be logged in to use virtual try-on.");
+      }
+
+      const photoFile = fileInputRef.current?.files?.[0];
+      const formData = new FormData();
+      formData.append("garment_url", selectedProduct.image_url || selectedProduct.image || selectedProduct.product_url || "");
+      formData.append("category", inferCategory(selectedProduct.category));
+      if (photoFile) {
+        formData.append("file", photoFile);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/recommendations/tryon`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.detail || "Try-on generation failed.");
+      }
+
+      const generatedImage = data.tryon_image_url || data.image_url || data.url || "";
+      if (!generatedImage) {
+        throw new Error("No try-on image was returned.");
+      }
+
+      setTryOnImageUrl(generatedImage);
+      setShowTryOn(true);
+      saveTriedOnLook(selectedProduct, generatedImage);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "The try-on preview could not be generated right now.");
+    } finally {
+      setTryOnLoading(false);
     }
   };
 
@@ -348,7 +409,11 @@ const UploadSection = ({ onUploadSuccess }) => {
                   <button
                     key={`${item.product_id || item.title || index}`}
                     type="button"
-                    onClick={() => setSelectedProduct(item)}
+                    onClick={() => {
+                      setSelectedProduct(item);
+                      setShowTryOn(false);
+                      setTryOnImageUrl("");
+                    }}
                     className={`rounded-[20px] border-2 p-3 text-left transition-all ${
                       selectedProduct?.product_id === item.product_id || selectedProduct?.title === item.title
                         ? "border-[#8B5CF6] bg-[#F3EEFF]"
@@ -375,14 +440,11 @@ const UploadSection = ({ onUploadSuccess }) => {
               <h3 className="text-lg font-black text-[#6D28D9]">Virtual try-on preview</h3>
               <button
                 type="button"
-                onClick={() => {
-                  setShowTryOn(true);
-                  saveTriedOnLook(selectedProduct);
-                }}
-                disabled={!selectedProduct}
+                onClick={handleTryOnPreview}
+                disabled={!selectedProduct || tryOnLoading}
                 className="rounded-full border-2 border-black bg-[#8B5CF6] px-4 py-2 text-sm font-black text-white shadow-[3px_3px_0px_black] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Show outfit on you
+                {tryOnLoading ? "Generating..." : "Show outfit on you"}
               </button>
             </div>
             <p className="mt-2 text-sm text-gray-600">
@@ -392,12 +454,12 @@ const UploadSection = ({ onUploadSuccess }) => {
               {preview && (
                 <img src={preview} alt="person preview" className="h-[340px] w-full object-cover" />
               )}
-              {showTryOn && selectedProduct && (
+              {showTryOn && (tryOnImageUrl || selectedProduct) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/20 to-transparent">
                   <img
-                    src={selectedProduct.image_url || selectedProduct.image || selectedProduct.product_url}
-                    alt={selectedProduct.title || "Selected outfit"}
-                    className="h-40 w-40 rounded-[24px] border-2 border-white object-cover shadow-[8px_8px_0px_rgba(0,0,0,0.25)]"
+                    src={tryOnImageUrl || selectedProduct.image_url || selectedProduct.image || selectedProduct.product_url}
+                    alt={selectedProduct?.title || "Selected outfit"}
+                    className="h-full w-full object-cover"
                   />
                 </div>
               )}

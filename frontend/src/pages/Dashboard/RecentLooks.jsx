@@ -427,8 +427,12 @@ function RecentLooks({
 
   useEffect(() => {
     const refreshSavedLooks = () => {
-      const saved = JSON.parse(localStorage.getItem("savedLooks") || "[]");
-      setSavedLooks(saved);
+      try {
+        const saved = JSON.parse(localStorage.getItem("savedLooks") || "[]");
+        setSavedLooks(Array.isArray(saved) ? saved : []);
+      } catch {
+        setSavedLooks([]);
+      }
     };
 
     refreshSavedLooks();
@@ -436,23 +440,48 @@ function RecentLooks({
     return () => window.removeEventListener("storage", refreshSavedLooks);
   }, []);
 
-  const toggleSave = (id) => {
-    let updated = [];
+  const normalizeLook = (look, fallbackIndex = 0) => {
+    const imageUrl = look?.image_url || look?.image || look?.url || look?.product_url || "";
+    return {
+      ...look,
+      id: look?.id || look?.product_id || `${imageUrl || "look"}-${fallbackIndex}`,
+      image_url: imageUrl,
+      title: look?.title || look?.name || `Tried-on outfit ${fallbackIndex + 1}`,
+      created_at: look?.created_at || new Date().toISOString(),
+      category: look?.category || look?.type || "Fashion pick",
+    };
+  };
 
-    if (savedLooks.includes(id)) {
-      updated = savedLooks.filter(
-        (item) => item !== id
-      );
-    } else {
-      updated = [...savedLooks, id];
-    }
+  const mergedLooks = [
+    ...savedLooks.filter(Boolean).map((item, index) => normalizeLook(item, index)),
+    ...looks
+      .filter(Boolean)
+      .map((item, index) => normalizeLook(item, index + savedLooks.length))
+      .filter((item) => !savedLooks.some((savedItem) => {
+        const savedImage = savedItem?.image_url || savedItem?.image || savedItem?.url || savedItem?.product_url || "";
+        const itemImage = item?.image_url || item?.image || item?.url || item?.product_url || "";
+        return savedItem?.id === item.id || (savedImage && savedImage === itemImage);
+      })),
+  ];
+
+  const toggleSave = (look) => {
+    const entry = normalizeLook(look);
+    const exists = savedLooks.some((item) => {
+      const savedImage = item?.image_url || item?.image || item?.url || item?.product_url || "";
+      const incomingImage = entry.image_url || "";
+      return item?.id === entry.id || (savedImage && savedImage === incomingImage);
+    });
+
+    const updated = exists
+      ? savedLooks.filter((item) => {
+          const savedImage = item?.image_url || item?.image || item?.url || item?.product_url || "";
+          const incomingImage = entry.image_url || "";
+          return item?.id !== entry.id && !(savedImage && savedImage === incomingImage);
+        })
+      : [entry, ...savedLooks];
 
     setSavedLooks(updated);
-
-    localStorage.setItem(
-      "savedLooks",
-      JSON.stringify(updated)
-    );
+    localStorage.setItem("savedLooks", JSON.stringify(updated));
   };
 
   const formatDate = (dateString) => {
@@ -467,9 +496,9 @@ function RecentLooks({
     });
   };
 
- const displayedLooks = limit ? looks.slice(0, limit) : looks;
+ const displayedLooks = limit ? mergedLooks.slice(0, limit) : mergedLooks;
 
-  if (loading && looks.length === 0) {
+  if (loading && mergedLooks.length === 0) {
     return (
       <div className="w-full">
 
@@ -552,7 +581,12 @@ function RecentLooks({
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-7">
 
         {displayedLooks.map((look, index) => {
-          const saved = savedLooks.includes(look.id);
+          const imageUrl = look.image_url || look.image || look.url || look.product_url;
+          const saved = savedLooks.some((item) => {
+            const savedImage = item?.image_url || item?.image || item?.url || item?.product_url || "";
+            const incomingImage = imageUrl || "";
+            return item?.id === look.id || (savedImage && savedImage === incomingImage);
+          });
 
           return (
             <div
@@ -574,7 +608,7 @@ function RecentLooks({
 
               <div className="relative">
                               <img
-                src={look.image_url}
+                src={imageUrl}
                 alt={`Look ${index + 1}`}
                 className="w-full aspect-[4/5] object-cover group-hover:scale-105 transition duration-500"
               />
@@ -582,7 +616,7 @@ function RecentLooks({
               
 
               <button
-                onClick={() => toggleSave(look.id)}
+                onClick={() => toggleSave(look)}
                 className="
                 absolute
                 top-4
@@ -615,7 +649,7 @@ function RecentLooks({
               <div className="flex justify-between items-center">
 
                 <h3 className="font-black text-lg">
-                  Look #{displayedLooks.length - index}
+                  {look.title || `Look ${displayedLooks.length - index}`}
                 </h3>
 
                 <span className="text-xs text-gray-500">
