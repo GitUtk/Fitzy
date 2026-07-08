@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import {
   CloudUpload,
-  Loader2,
   CheckCircle2,
   ImageIcon,
   AlertCircle,
@@ -13,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { DotmSquare18 } from "@/components/ui/dotm-square-18";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
@@ -335,7 +335,7 @@ const UploadSection = ({ onUploadSuccess }) => {
               <img src={preview} alt="preview" className="h-[380px] w-full object-contain bg-background" />
               {loading && (
                 <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center">
-                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <DotmSquare18 className="h-10 w-10 text-primary" />
                   <p className="mt-4 text-sm font-medium">Uploading your look...</p>
                 </div>
               )}
@@ -376,7 +376,7 @@ const UploadSection = ({ onUploadSuccess }) => {
             disabled={styleLoading || !preview}
             className="w-full"
           >
-            {styleLoading && <Loader2 className="animate-spin" />}
+            {styleLoading && <DotmSquare18 className="h-4 w-4 text-current" />}
             {styleLoading ? "Generating outfit ideas..." : "Generate outfit ideas"}
           </Button>
         </div>
@@ -445,7 +445,7 @@ const UploadSection = ({ onUploadSuccess }) => {
                     onClick={handleTryOnPreview}
                     disabled={!selectedProduct || tryOnLoading}
                   >
-                    {tryOnLoading && <Loader2 className="animate-spin" />}
+                    {tryOnLoading && <DotmSquare18 className="h-4 w-4 text-current" />}
                     {tryOnLoading ? "Generating..." : "Show outfit on you"}
                   </Button>
                 </div>
