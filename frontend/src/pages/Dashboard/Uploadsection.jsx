@@ -1,11 +1,18 @@
 import React, { useState, useRef } from "react";
 import {
-  FaCloudUploadAlt,
-  FaSpinner,
-  FaCheckCircle,
-  FaImage,
-  FaExclamationCircle,
-} from "react-icons/fa";
+  CloudUpload,
+  Loader2,
+  CheckCircle2,
+  ImageIcon,
+  AlertCircle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
@@ -85,9 +92,7 @@ const UploadSection = ({ onUploadSuccess }) => {
 
       const response = await fetch(`${API_BASE_URL}/recommendations/tryon`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
@@ -161,9 +166,7 @@ const UploadSection = ({ onUploadSuccess }) => {
 
       const uploadResponse = await fetch(`${API_BASE_URL}/upload/image`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
@@ -253,9 +256,7 @@ const UploadSection = ({ onUploadSuccess }) => {
 
       let response = await fetch(`${API_BASE_URL}/recommendations/stylist`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
@@ -265,9 +266,7 @@ const UploadSection = ({ onUploadSuccess }) => {
       } else if (response.status === 404 || response.status === 405) {
         const similarResponse = await fetch(`${API_BASE_URL}/recommendations/similar`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
 
@@ -303,197 +302,204 @@ const UploadSection = ({ onUploadSuccess }) => {
   };
 
   return (
-    <div className="bg-[#F7F7FB] text-black border-2 border-black rounded-[32px] p-8 shadow-[8px_8px_0px_black]">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-5xl font-black tracking-tight text-[#6D28D9]">
-            Virtual Try-On
-          </h2>
-          <p className="text-gray-600 mt-3 text-lg">
-            Upload your photo, describe the outfit you want, and preview clothing options instantly.
-          </p>
-        </div>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Virtual Try-On</CardTitle>
+        <CardDescription>
+          Upload your photo, describe the outfit you want, and preview clothing options instantly.
+        </CardDescription>
+      </CardHeader>
 
-      <div
-        onDragEnter={handleDrag}
-        onDragOver={handleDrag}
-        onDragLeave={handleDrag}
-        onDrop={handleDrop}
-        onClick={chooseFile}
-        className={`rounded-[28px] border-2 border-dashed transition-all cursor-pointer overflow-hidden bg-white border-gray-300 ${
-          dragActive ? "border-[#8B5CF6] bg-[#F3EEFF]" : ""
-        }`}
-      >
-        <input
-          ref={fileInputRef}
-          hidden
-          type="file"
-          accept="image/*"
-          onChange={handleChange}
-        />
+      <CardContent className="space-y-6">
+        <div
+          onDragEnter={handleDrag}
+          onDragOver={handleDrag}
+          onDragLeave={handleDrag}
+          onDrop={handleDrop}
+          onClick={chooseFile}
+          className={cn(
+            "rounded-lg border-2 border-dashed transition-colors cursor-pointer overflow-hidden",
+            dragActive ? "border-primary bg-accent" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-accent/50"
+          )}
+        >
+          <input
+            ref={fileInputRef}
+            hidden
+            type="file"
+            accept="image/*"
+            onChange={handleChange}
+          />
 
-        {preview ? (
-          <div className="relative rounded-[24px] overflow-hidden border border-black">
-            <img src={preview} alt="preview" className="w-full h-[420px] object-cover" />
-            {loading && (
-              <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center">
-                <FaSpinner className="animate-spin text-5xl text-[#8B5CF6]" />
-                <p className="text-black mt-5 font-bold">Uploading your look...</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="py-24 flex flex-col items-center justify-center text-center px-8">
-            <div className="w-24 h-24 rounded-full border-2 border-black bg-[#8B5CF6] text-white flex items-center justify-center text-5xl">
-              <FaCloudUploadAlt />
+          {preview ? (
+            <div className="relative">
+              <img src={preview} alt="preview" className="h-[380px] w-full object-contain bg-background" />
+              {loading && (
+                <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="mt-4 text-sm font-medium">Uploading your look...</p>
+                </div>
+              )}
             </div>
-            <h3 className="text-[#6D28D9] text-3xl font-black mt-8">Drag & Drop or Choose File</h3>
-            <p className="text-gray-500 mt-3 text-lg">JPG, PNG, JPEG, WEBP (Max 10MB)</p>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                chooseFile();
-              }}
-              className="mt-8 bg-[#8B5CF6] text-white px-10 py-4 rounded-2xl border-2 border-black font-black shadow-[5px_5px_0px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
-            >
-              Choose File
-            </button>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center px-8">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <CloudUpload className="h-8 w-8" />
+              </div>
+              <h3 className="font-display font-semibold text-lg mt-6">Drag & drop or choose file</h3>
+              <p className="text-muted-foreground mt-2 text-sm">JPG, PNG, JPEG, WEBP (Max 10MB)</p>
+              <Button
+                type="button"
+                className="mt-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  chooseFile();
+                }}
+              >
+                Choose File
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <Label htmlFor="outfit-prompt">Describe the outfit you want</Label>
+          <Textarea
+            id="outfit-prompt"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={3}
+            placeholder="Example: Korean streetwear with a clean white shirt, relaxed denim, and sneakers"
+          />
+          <Button
+            type="button"
+            onClick={handleGenerateStyle}
+            disabled={styleLoading || !preview}
+            className="w-full"
+          >
+            {styleLoading && <Loader2 className="animate-spin" />}
+            {styleLoading ? "Generating outfit ideas..." : "Generate outfit ideas"}
+          </Button>
+        </div>
+
+        {analysis && (
+          <Card className="bg-muted/30 shadow-none">
+            <CardContent className="p-4">
+              <Badge variant="secondary" className="mb-2">Stylist notes</Badge>
+              <p className="text-sm text-muted-foreground whitespace-pre-line">{analysis}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {recommendations.length > 0 && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="shadow-none">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Clothing options</CardTitle>
+                  <span className="text-xs text-muted-foreground">Tap to preview</span>
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                {recommendations.map((item, index) => {
+                  const imageUrl = item.image_url || item.image || item.product_url;
+                  const isSelected =
+                    selectedProduct?.product_id === item.product_id ||
+                    selectedProduct?.title === item.title;
+
+                  return (
+                    <button
+                      key={`${item.product_id || item.title || index}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedProduct(item);
+                        setShowTryOn(false);
+                        setTryOnImageUrl("");
+                      }}
+                      className={cn(
+                        "rounded-lg border p-3 text-left transition-all hover:shadow-sm",
+                        isSelected ? "border-primary bg-accent ring-1 ring-primary/20" : "border-border bg-card"
+                      )}
+                    >
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={item.title || "Suggested clothing"} className="h-28 w-full rounded-md object-cover" />
+                      ) : (
+                        <div className="flex h-28 items-center justify-center rounded-md border border-dashed bg-muted text-sm text-muted-foreground">
+                          Preview image
+                        </div>
+                      )}
+                      <p className="mt-2 font-medium text-sm">{item.title || "Suggested piece"}</p>
+                      <p className="text-xs text-muted-foreground">{item.category || "Fashion pick"}</p>
+                    </button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-none">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base">Virtual try-on preview</CardTitle>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleTryOnPreview}
+                    disabled={!selectedProduct || tryOnLoading}
+                  >
+                    {tryOnLoading && <Loader2 className="animate-spin" />}
+                    {tryOnLoading ? "Generating..." : "Show outfit on you"}
+                  </Button>
+                </div>
+                <CardDescription>
+                  Pick an outfit and press the button to preview it over your uploaded photo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative overflow-hidden rounded-lg border bg-muted/30">
+                  {preview && (
+                    <img src={preview} alt="person preview" className="h-[300px] w-full object-contain bg-background" />
+                  )}
+                  {showTryOn && (tryOnImageUrl || selectedProduct) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/20 to-transparent">
+                      <img
+                        src={tryOnImageUrl || selectedProduct.image_url || selectedProduct.image || selectedProduct.product_url}
+                        alt={selectedProduct?.title || "Selected outfit"}
+                        className="h-full w-full object-contain bg-background"
+                      />
+                    </div>
+                  )}
+                  {!showTryOn && selectedProduct && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-center text-sm font-medium text-muted-foreground">
+                      Press "Show outfit on you" to view the try-on preview.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
-      </div>
 
-      <div className="mt-6 space-y-4">
-        <label className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-600">
-          Describe the outfit you want
-        </label>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          rows={3}
-          placeholder="Example: Korean streetwear with a clean white shirt, relaxed denim, and sneakers"
-          className="w-full rounded-2xl border-2 border-black bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#8B5CF6]"
-        />
+        {success && (
+          <Alert variant="success">
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertDescription>Image uploaded successfully.</AlertDescription>
+          </Alert>
+        )}
 
-        <button
-          type="button"
-          onClick={handleGenerateStyle}
-          disabled={styleLoading || !preview}
-          className="w-full rounded-2xl border-2 border-black bg-[#8B5CF6] px-5 py-3 font-black text-white shadow-[4px_4px_0px_black] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {styleLoading ? "Generating outfit ideas..." : "Generate outfit ideas"}
-        </button>
-      </div>
+        {isMock && (
+          <Alert variant="warning">
+            <ImageIcon className="h-4 w-4" />
+            <AlertDescription>Running in demo mode.</AlertDescription>
+          </Alert>
+        )}
 
-      {analysis && (
-        <div className="mt-6 rounded-[24px] border border-black bg-white p-4 text-sm text-gray-700">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#6D28D9]">Stylist notes</p>
-          <p className="whitespace-pre-line">{analysis}</p>
-        </div>
-      )}
-
-      {recommendations.length > 0 && (
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[24px] border border-black bg-white p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-black text-[#6D28D9]">Clothing options</h3>
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-                Tap to preview
-              </span>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {recommendations.map((item, index) => {
-                const imageUrl = item.image_url || item.image || item.product_url;
-                return (
-                  <button
-                    key={`${item.product_id || item.title || index}`}
-                    type="button"
-                    onClick={() => {
-                      setSelectedProduct(item);
-                      setShowTryOn(false);
-                      setTryOnImageUrl("");
-                    }}
-                    className={`rounded-[20px] border-2 p-3 text-left transition-all ${
-                      selectedProduct?.product_id === item.product_id || selectedProduct?.title === item.title
-                        ? "border-[#8B5CF6] bg-[#F3EEFF]"
-                        : "border-black bg-white"
-                    }`}
-                  >
-                    {imageUrl ? (
-                      <img src={imageUrl} alt={item.title || "Suggested clothing"} className="h-32 w-full rounded-[16px] object-cover" />
-                    ) : (
-                      <div className="flex h-32 items-center justify-center rounded-[16px] border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
-                        Preview image
-                      </div>
-                    )}
-                    <p className="mt-3 font-black text-black">{item.title || "Suggested piece"}</p>
-                    <p className="text-sm text-gray-600">{item.category || "Fashion pick"}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="rounded-[24px] border border-black bg-white p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-lg font-black text-[#6D28D9]">Virtual try-on preview</h3>
-              <button
-                type="button"
-                onClick={handleTryOnPreview}
-                disabled={!selectedProduct || tryOnLoading}
-                className="rounded-full border-2 border-black bg-[#8B5CF6] px-4 py-2 text-sm font-black text-white shadow-[3px_3px_0px_black] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {tryOnLoading ? "Generating..." : "Show outfit on you"}
-              </button>
-            </div>
-            <p className="mt-2 text-sm text-gray-600">
-              Pick an outfit and press the button to preview it over your uploaded photo.
-            </p>
-            <div className="relative mt-4 overflow-hidden rounded-[20px] border border-black bg-[#f8f2ff]">
-              {preview && (
-                <img src={preview} alt="person preview" className="h-[340px] w-full object-cover" />
-              )}
-              {showTryOn && (tryOnImageUrl || selectedProduct) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/20 to-transparent">
-                  <img
-                    src={tryOnImageUrl || selectedProduct.image_url || selectedProduct.image || selectedProduct.product_url}
-                    alt={selectedProduct?.title || "Selected outfit"}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
-              {!showTryOn && selectedProduct && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-center text-sm font-semibold text-gray-700">
-                  Press “Show outfit on you” to view the try-on preview.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {success && (
-        <div className="mt-6 bg-white border border-[#8B5CF6] rounded-2xl p-4 flex items-center gap-3 text-black">
-          <FaCheckCircle />
-          <span>Image uploaded successfully.</span>
-        </div>
-      )}
-
-      {isMock && (
-        <div className="mt-6 bg-white border border-yellow-500 rounded-2xl p-4 flex items-center gap-3 text-black">
-          <FaImage />
-          <span>Running in demo mode.</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-6 bg-white border border-red-500 rounded-2xl p-4 flex items-center gap-3 text-black">
-          <FaExclamationCircle />
-          <span>{error}</span>
-        </div>
-      )}
-    </div>
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

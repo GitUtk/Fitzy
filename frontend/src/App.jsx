@@ -24,10 +24,14 @@ import { Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage/LandingPage";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
-import Dashboard from "./pages/Dashboard/Dashboard";
+import Dashboard, {
+  DashboardHome,
+  DashboardLooks,
+  DashboardProfile,
+  DashboardWardrobe,
+} from "./pages/Dashboard/Dashboard";
 import Pricing from "./pages/Pricing/Pricing";
 import StyleStudio from "./pages/StyleStudio/StyleStudio";
-
 import ProfileSetup from "./pages/ProfileSetup/ProfileSetup";
 
 function App() {
@@ -37,7 +41,12 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/profile-setup" element={<ProfileSetup />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard" element={<Dashboard />}>
+        <Route index element={<DashboardHome />} />
+        <Route path="my-looks" element={<DashboardLooks />} />
+        <Route path="my-wardrobe" element={<DashboardWardrobe />} />
+        <Route path="profile" element={<DashboardProfile />} />
+      </Route>
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/style-studio" element={<StyleStudio />} />
     </Routes>

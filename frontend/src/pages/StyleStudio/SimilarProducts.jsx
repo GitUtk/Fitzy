@@ -1,217 +1,70 @@
-// function SimilarProducts({ products, loading, error }) {
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-//   return (
-//     <div className="mt-8 bg-white border-2 border-black rounded-3xl p-8 shadow-[8px_8px_0px_black]">
-
-//       <div className="flex items-center justify-between mb-8">
-
-//         <div>
-//           <h2 className="text-3xl font-black text-black">
-//             Similar Outfits
-//           </h2>
-
-//           <p className="text-gray-500 mt-2">
-//             AI found matching products for your outfit.
-//           </p>
-//         </div>
-
-//       </div>
-
-//       {error && (
-//         <div className="mb-6 bg-red-50 border border-red-400 rounded-xl p-4 text-red-600">
-//           {error}
-//         </div>
-//       )}
-
-//       {loading && (
-//         <div className="border-2 border-dashed rounded-2xl p-12 text-center text-gray-500">
-//           Finding similar outfits...
-//         </div>
-//       )}
-
-//       {!loading && !error && products.length === 0 && (
-//         <div className="border-2 border-dashed rounded-2xl p-12 text-center text-gray-400">
-//           Upload an outfit to automatically discover similar products.
-//         </div>
-//       )}
-
-//       {products.length > 0 && (
-//         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-//           {products.map((item, index) => (
-//             <div
-//               key={index}
-//               className="bg-[#F8F6FF] border-2 border-black rounded-2xl overflow-hidden shadow-[5px_5px_0px_black]"
-//             >
-//               <img
-//                 src={item.image_url}
-//                 alt={item.title}
-//                 className="w-full h-72 object-cover"
-//               />
-
-//               <div className="p-5">
-
-//                 <h3 className="font-black text-lg text-black">
-//                   {item.title}
-//                 </h3>
-
-//                 <p className="text-sm text-gray-600 mt-2">
-//                   {item.category}
-//                 </p>
-
-//                 <div className="flex justify-between mt-4 text-sm">
-
-//                   <span className="font-semibold">
-//                     ⭐ {item.rating}
-//                   </span>
-
-//                   <span className="font-bold text-[#7C3AED]">
-//                     ₹{item.price}
-//                   </span>
-
-//                 </div>
-
-//                 <a
-//                   href={item.product_url}
-//                   target="_blank"
-//                   rel="noopener noreferrer"
-//                   className="
-//                   mt-5
-//                   block
-//                   text-center
-//                   bg-[#8B5CF6]
-//                   text-white
-//                   py-3
-//                   rounded-xl
-//                   border-2
-//                   border-black
-//                   font-bold
-//                   shadow-[4px_4px_0px_black]
-//                   hover:translate-y-[2px]
-//                   hover:shadow-none
-//                   transition-all
-//                   "
-//                 >
-//                   View Product
-//                 </a>
-
-//               </div>
-//             </div>
-//           ))}
-
-//         </div>
-//       )}
-
-//     </div>
-//   );
-// }
-
-// export default SimilarProducts;
 function SimilarProducts({ products, loading, error }) {
-
   return (
-    <div className="mt-8 bg-white border-2 border-black rounded-3xl p-8 shadow-[8px_8px_0px_black]">
+    <Card className="border-zinc-200 shadow-sm">
+      <CardHeader className="space-y-2">
+        <CardTitle className="text-2xl font-semibold">Similar products</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Matching products based on the uploaded outfit.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
-      <div className="flex items-center justify-between mb-8">
+        {loading && (
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+            Finding matching products...
+          </div>
+        )}
 
-        <div>
-          <h2 className="text-3xl font-black text-black">
-            Similar Outfits
-          </h2>
+        {!loading && !error && products.length === 0 && (
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+            Upload an outfit to discover similar products.
+          </div>
+        )}
 
-          <p className="text-gray-500 mt-2">
-            AI found matching products for your outfit.
-          </p>
-        </div>
-
-      </div>
-
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-400 rounded-xl p-4 text-red-600">
-          {error}
-        </div>
-      )}
-
-      {loading && (
-        <div className="border-2 border-dashed rounded-2xl p-12 text-center text-gray-500">
-          Finding similar outfits...
-        </div>
-      )}
-
-      {!loading && !error && products.length === 0 && (
-        <div className="border-2 border-dashed rounded-2xl p-12 text-center text-gray-400">
-          Upload an outfit to automatically discover similar products.
-        </div>
-      )}
-
-      {products.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          {products.map((item, index) => (
-            <div
-              key={index}
-              className="bg-[#F8F6FF] border-2 border-black rounded-2xl overflow-hidden shadow-[5px_5px_0px_black]"
-            >
-              <img
-                src={item.image_url}
-                alt={item.title}
-                className="w-full h-72 object-cover"
-              />
-
-              <div className="p-5">
-
-                <h3 className="font-black text-lg text-black">
-                  {item.title}
-                </h3>
-
-                <p className="text-sm text-gray-600 mt-2">
-                  {item.category}
-                </p>
-
-                <div className="flex justify-between mt-4 text-sm">
-
-                  <span className="font-semibold">
-                    ⭐ {item.rating}
-                  </span>
-
-                  <span className="font-bold text-[#7C3AED]">
-                    ₹{item.price}
-                  </span>
-
+        {products.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {products.map((item, index) => (
+              <div key={index} className="overflow-hidden rounded-xl border border-zinc-200 bg-background">
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  className="h-64 w-full object-cover"
+                />
+                <div className="space-y-3 p-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {item.category}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-foreground">
+                      Rating {item.rating}
+                    </span>
+                    <span className="font-semibold text-foreground">₹{item.price}</span>
+                  </div>
+                  <Button asChild className="w-full">
+                    <a href={item.product_url} target="_blank" rel="noopener noreferrer">
+                      View product
+                    </a>
+                  </Button>
                 </div>
-
-                <a
-                  href={item.product_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="
-                  mt-5
-                  block
-                  text-center
-                  bg-[#8B5CF6]
-                  text-white
-                  py-3
-                  rounded-xl
-                  border-2
-                  border-black
-                  font-bold
-                  shadow-[4px_4px_0px_black]
-                  hover:translate-y-[2px]
-                  hover:shadow-none
-                  transition-all
-                  "
-                >
-                  View Product
-                </a>
-
               </div>
-            </div>
-          ))}
-
-        </div>
-      )}
-
-    </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

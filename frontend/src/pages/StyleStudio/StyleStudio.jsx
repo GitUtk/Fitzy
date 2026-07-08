@@ -172,11 +172,11 @@ import UploadCard from "./UploadCard";
 import AnalysisCard from "./AnalysisCard";
 import SimilarProducts from "./SimilarProducts";
 import Sidebar from "../Dashboard/Sidebar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function StyleStudio() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
-  const [analysis, setAnalysis] = useState("");
   const [displayAnalysis, setDisplayAnalysis] = useState("");
 const [products, setProducts] = useState([]);
 
@@ -199,7 +199,6 @@ const [productsError, setProductsError] = useState("");
     setLoadingAnalysis(true);
     setLoadingProducts(true);
 
-    setAnalysis("");
     setProducts([]);
 
     setAnalysisError("");
@@ -287,36 +286,50 @@ try {
 }, [selectedFile]);
 
   return (
-    <div className="min-h-screen flex bg-[#FCFCFC]">
+    <div className="min-h-screen bg-background">
       <Sidebar
         activeTab="styleStudio"
         setActiveTab={() => {}}
         handleLogout={handleLogout}
       />
 
-      <main className="flex-1 lg:ml-[280px] px-5 md:px-8 lg:px-10 py-8 space-y-8">
-        <UploadCard
-          selectedFile={selectedFile}
-          setSelectedFile={setSelectedFile}
-          uploadedImage={uploadedImage}
-          setUploadedImage={setUploadedImage}
-          onUploadSuccess={(data) => {
-            setUploadedImage(data);
-          }}
-        />
+      <main className="lg:ml-[260px]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
+          <Card className="border-zinc-200 shadow-sm">
+            <CardHeader className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Style Studio</p>
+              <CardTitle className="text-3xl font-bold tracking-tight">
+                Upload an outfit and get AI styling feedback
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Keep the layout focused and simple. Upload a photo, wait for the analysis, and browse matching products.
+            </CardContent>
+          </Card>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <AnalysisCard
-  analysis={displayAnalysis}
-  loading={loadingAnalysis}
-  error={analysisError}
-/>
-
-          <SimilarProducts
-            products={products}
-            loading={loadingProducts}
-            error={productsError}
+          <UploadCard
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+            uploadedImage={uploadedImage}
+            setUploadedImage={setUploadedImage}
+            onUploadSuccess={(data) => {
+              setUploadedImage(data);
+            }}
           />
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <AnalysisCard
+              analysis={displayAnalysis}
+              loading={loadingAnalysis}
+              error={analysisError}
+            />
+
+            <SimilarProducts
+              products={products}
+              loading={loadingProducts}
+              error={productsError}
+            />
+          </div>
         </div>
       </main>
     </div>

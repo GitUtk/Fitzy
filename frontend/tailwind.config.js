@@ -1,107 +1,88 @@
-// /** @type {import('tailwindcss').Config} */
-// export default {
-//   content: [
-//     "./index.html",
-//     "./src/**/*.{js,jsx,ts,tsx}",
-//   ],
-//   theme: {
-//     extend: {},
-//   },
-//   plugins: [],
-// }
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ["class"],
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
       colors: {
-        /* Purple / Lime Palette */
-        "primary": "#7C3AED",
-        "primary-light": "#A78BFA",
-        "primary-dark": "#5B21B6",
-        "primary-container": "#2E1065",
-        "accent": "#CCFF00",
-        "accent-dark": "#A3CC00",
-
-        /* Surfaces */
-        "surface": "#0F0B1A",
-        "surface-light": "#1A1528",
-        "surface-card": "#1E1833",
-        "surface-container-low": "#150F24",
-        "surface-container-high": "#2A2340",
-
-        /* Text */
-        "on-surface": "#F5F3FF",
-        "on-surface-variant": "#A78BFA",
-        "on-background": "#F5F3FF",
-
-        /* Borders */
-        "outline-black": "#7C3AED",
-        "outline-subtle": "#3B2D5E",
-
-        /* Secondary */
-        "secondary": "#A78BFA",
-        "secondary-container": "#2E1065",
-
-        /* Status */
-        "success": "#22C55E",
-        "danger": "#EF4444",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
       },
       borderRadius: {
-        "DEFAULT": "0.5rem",
-        "lg": "0.75rem",
-        "xl": "1rem",
-        "2xl": "1.25rem",
-        "3xl": "1.5rem",
-        "full": "9999px",
-      },
-      spacing: {
-        "xs": "8px",
-        "sm": "16px",
-        "md": "24px",
-        "lg": "40px",
-        "xl": "64px",
-        "base": "4px",
-        "margin": "32px",
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        "body-md": ["Hanken Grotesk", "sans-serif"],
-        "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
-        "body-bold": ["Hanken Grotesk", "sans-serif"],
-        "display-lg": ["Plus Jakarta Sans", "sans-serif"],
-        "label-sm": ["JetBrains Mono", "monospace"],
-      },
-      boxShadow: {
-        "brutal": "4px 4px 0px 0px #7C3AED",
-        "brutal-lg": "6px 6px 0px 0px #7C3AED",
-        "brutal-lime": "4px 4px 0px 0px #CCFF00",
-        "brutal-lime-lg": "6px 6px 0px 0px #CCFF00",
-        "glow-purple": "0 0 20px rgba(124, 58, 237, 0.4)",
-        "glow-lime": "0 0 20px rgba(204, 255, 0, 0.3)",
-      },
-      animation: {
-        "float": "float 3s ease-in-out infinite",
-        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
-        "slide-up": "slideUp 0.3s ease-out",
+        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
       keyframes: {
-        float: {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-10px)" },
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
-        pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 20px rgba(124, 58, 237, 0.3)" },
-          "50%": { boxShadow: "0 0 40px rgba(124, 58, 237, 0.6)" },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
-        slideUp: {
-          "0%": { transform: "translateY(10px)", opacity: "0" },
-          "100%": { transform: "translateY(0)", opacity: "1" },
-        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
-  plugins: [],
-}
+  plugins: [require("tailwindcss-animate")],
+};
