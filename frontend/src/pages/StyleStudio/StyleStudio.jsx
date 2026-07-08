@@ -295,18 +295,6 @@ try {
 
       <main className="lg:ml-[260px]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
-          <Card className="border-zinc-200 shadow-sm">
-            <CardHeader className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Style Studio</p>
-              <CardTitle className="text-3xl font-bold tracking-tight">
-                Upload an outfit and get AI styling feedback
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Keep the layout focused and simple. Upload a photo, wait for the analysis, and browse matching products.
-            </CardContent>
-          </Card>
-
           <UploadCard
             selectedFile={selectedFile}
             setSelectedFile={setSelectedFile}

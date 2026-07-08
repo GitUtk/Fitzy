@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useOutletContext } from "react-router-dom";
+import { MoonStar, SunMedium } from "lucide-react";
 import Sidebar from "./Sidebar";
 import UploadSection from "./Uploadsection";
 import RecentLooks from "./RecentLooks";
 import Profile from "../Profile/Profile";
 import MyWardrobe from "./MyWardrobe";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
@@ -14,6 +16,7 @@ function Dashboard() {
   const [looks, setLooks] = useState([]);
   const [loadingLooks, setLoadingLooks] = useState(false);
   const [userFirstName, setUserFirstName] = useState("there");
+  const [theme, setTheme] = useState("light");
 
   const fetchLooks = async () => {
     const token = localStorage.getItem("token");
@@ -59,9 +62,25 @@ function Dashboard() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const initialTheme = savedTheme === "dark" ? "dark" : "light";
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle("dark", initialTheme === "dark");
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
+  };
+
+  const toggleTheme = () => {
+    setTheme((current) => {
+      const nextTheme = current === "dark" ? "light" : "dark";
+      document.documentElement.classList.toggle("dark", nextTheme === "dark");
+      localStorage.setItem("theme", nextTheme);
+      return nextTheme;
+    });
   };
 
   return (
@@ -70,24 +89,14 @@ function Dashboard() {
 
       <main className="lg:ml-[260px] h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <Card className="mb-6 border-zinc-200 bg-white shadow-sm">
-            <CardContent className="p-6">
-              <div className="space-y-2">
-                <h3 className="font-display text-2xl font-semibold tracking-tight">
-                  Welcome, {userFirstName}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Ready to pick up where you left off?
-                </p>
-              </div>
-            </CardContent>
-          </Card>
           <Outlet
             context={{
               looks,
               loadingLooks,
               fetchLooks,
               userFirstName,
+              theme,
+              toggleTheme,
             }}
           />
         </div>
@@ -97,10 +106,35 @@ function Dashboard() {
 }
 
 export function DashboardHome() {
-  const { fetchLooks } = useOutletContext();
+  const { fetchLooks, userFirstName, theme, toggleTheme } = useOutletContext();
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      <Card className="bg-card shadow-none border-0">
+        <CardContent className="flex flex-col gap-4 p-0 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <h3 className="font-display text-2xl font-semibold tracking-tight">
+              Welcome, {userFirstName}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Ready to pick up where you left off?
+            </p>
+          </div>
+          <Button type="button" variant="outline" onClick={toggleTheme} className="shrink-0">
+            {theme === "dark" ? (
+              <>
+                <SunMedium className="h-4 w-4" />
+                Light theme
+              </>
+            ) : (
+              <>
+                <MoonStar className="h-4 w-4" />
+                Dark theme
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
       <UploadSection onUploadSuccess={fetchLooks} variant="dashboard" />
     </div>
   );
