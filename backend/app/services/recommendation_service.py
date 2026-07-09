@@ -23,8 +23,8 @@ class RecommendationService:
         backend_dir = os.path.dirname(app_dir)
         repo_root = os.path.dirname(backend_dir)
 
-        csv_path = os.path.join(repo_root, "ml", "dataset", "labels.csv")
-        embeddings_path = os.path.join(repo_root, "ml", "dataset", "embeddings.npy")
+        csv_path = os.path.join(repo_root, "frontend", "public", "static", "labels.csv")
+        embeddings_path = os.path.join(repo_root, "frontend", "public", "static", "embeddings.npy")
         onnx_path = os.path.join(services_dir, "resnet50_features.onnx")
 
         if not os.path.exists(csv_path):
@@ -112,7 +112,7 @@ class RecommendationService:
             results.append({
                 "rank": len(results) + 1,
                 "image": row["image"],
-                "image_url": row["image_url"],
+                "image_url": f"/static/images/{row['image']}",
                 "product_id": str(row["product_id"]),
                 "title": row["title"],
                 "color": row["color"],
@@ -152,7 +152,7 @@ class RecommendationService:
             row = self.df_labels.iloc[idx]
             results.append({
                 "image": row["image"],
-                "image_url": row["image_url"],
+                "image_url": f"/static/images/{row['image']}",
                 "product_id": str(row["product_id"]),
                 "title": row["title"],
                 "color": row["color"],

@@ -7,9 +7,11 @@ import torchvision.transforms as transforms
 from PIL import Image
 
 def main():
-    csv_path = "dataset/labels.csv"
-    images_dir = "dataset/images"
-    embeddings_out = "dataset/embeddings.npy"
+    ml_dir = os.path.dirname(os.path.abspath(__file__))
+    dataset_dir = os.path.join(os.path.dirname(ml_dir), "frontend", "public", "static")
+    csv_path = os.path.join(dataset_dir, "labels.csv")
+    images_dir = os.path.join(dataset_dir, "images")
+    embeddings_out = os.path.join(dataset_dir, "embeddings.npy")
 
     if not os.path.exists(csv_path):
         print(f"Error: {csv_path} not found. Please run scrape.py first.")

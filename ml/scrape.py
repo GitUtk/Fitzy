@@ -24,13 +24,13 @@ TARGET_PER_CATEGORY = 100
 MAX_WORKERS = 15
 DOWNLOAD_RATE = 10 
 
-DATASET_DIR = Path("dataset")
+ml_dir = Path(__file__).parent.resolve()
+DATASET_DIR = ml_dir.parent / "frontend" / "public" / "static"
 IMAGES_DIR = DATASET_DIR / "images"
 
-if DATASET_DIR.exists():
-    shutil.rmtree(DATASET_DIR)
-DATASET_DIR.mkdir(exist_ok=True)
-IMAGES_DIR.mkdir(exist_ok=True)
+# Create directories if they do not exist
+DATASET_DIR.mkdir(parents=True, exist_ok=True)
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 session = requests.Session()
 

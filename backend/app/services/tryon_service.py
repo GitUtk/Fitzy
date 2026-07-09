@@ -12,6 +12,25 @@ class TryOnService:
         pass
 
     async def download_image(self, url: str) -> bytes:
+        # Check if the URL refers to a local file or a static dataset image
+        if os.path.exists(url):
+            with open(url, "rb") as f:
+                return f.read()
+
+        # If it refers to our static images route or is just a filename
+        filename = os.path.basename(url)
+        current_file_path = os.path.abspath(__file__)
+        services_dir = os.path.dirname(current_file_path)
+        app_dir = os.path.dirname(services_dir)
+        backend_dir = os.path.dirname(app_dir)
+        repo_root = os.path.dirname(backend_dir)
+        local_path = os.path.join(repo_root, "frontend", "public", "static", "images", filename)
+        
+        if os.path.exists(local_path):
+            with open(local_path, "rb") as f:
+                return f.read()
+
+        # Fallback to HTTP download
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(url)
             if response.status_code == 200:

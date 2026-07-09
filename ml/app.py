@@ -34,8 +34,10 @@ preprocess = None
 def startup_event():
     global df_labels, db_embeddings_norm, feature_extractor, preprocess
     
-    csv_path = "dataset/labels.csv"
-    embeddings_path = "dataset/embeddings.npy"
+    ml_dir = os.path.dirname(os.path.abspath(__file__))
+    dataset_dir = os.path.join(os.path.dirname(ml_dir), "frontend", "public", "static")
+    csv_path = os.path.join(dataset_dir, "labels.csv")
+    embeddings_path = os.path.join(dataset_dir, "embeddings.npy")
     
     if not os.path.exists(csv_path):
         raise RuntimeError(f"Metadata file {csv_path} not found.")
@@ -130,5 +132,7 @@ async def get_index():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Index.html not found!</h1>")
 
-if os.path.exists("dataset"):
-    app.mount("/static", StaticFiles(directory="dataset"), name="static")
+ml_dir = os.path.dirname(os.path.abspath(__file__))
+dataset_dir = os.path.join(os.path.dirname(ml_dir), "frontend", "public", "static")
+if os.path.exists(dataset_dir):
+    app.mount("/static", StaticFiles(directory=dataset_dir), name="static")
