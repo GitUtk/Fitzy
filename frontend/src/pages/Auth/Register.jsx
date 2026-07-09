@@ -1,364 +1,12 @@
-// import { useState } from "react";
-// import { Link, useNavigate } from "react-router-dom";
-
-// function Register() {
-//   const navigate = useNavigate();
-
-//   const [formData, setFormData] = useState({
-//     fullName: "",
-//     email: "",
-//     phone: "",
-//     password: "",
-//     confirmPassword: "",
-//   });
-
-//   const [errors, setErrors] = useState({});
-
-//   const validate = () => {
-//     let newErrors = {};
-
-//     if (!formData.fullName.trim()) {
-//       newErrors.fullName = "Full Name is required";
-//     } else if (formData.fullName.length < 3) {
-//       newErrors.fullName =
-//         "Name must be at least 3 characters";
-//     }
-
-//     if (!formData.email.trim()) {
-//       newErrors.email = "Email is required";
-//     } else if (
-//       !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
-//         formData.email
-//       )
-//     ) {
-//       newErrors.email = "Enter a valid email";
-//     }
-
-//     if (!formData.phone.trim()) {
-//       newErrors.phone = "Phone Number is required";
-//     } else if (!/^[0-9]{10}$/.test(formData.phone)) {
-//       newErrors.phone =
-//         "Phone number must be exactly 10 digits";
-//     }
-
-//     if (!formData.password) {
-//       newErrors.password = "Password is required";
-//     } else if (formData.password.length < 6) {
-//       newErrors.password =
-//         "Password must be at least 6 characters";
-//     }
-
-//     if (!formData.confirmPassword) {
-//       newErrors.confirmPassword =
-//         "Confirm Password is required";
-//     } else if (
-//       formData.password !== formData.confirmPassword
-//     ) {
-//       newErrors.confirmPassword =
-//         "Passwords do not match";
-//     }
-
-//     return newErrors;
-//   };
-
-//   const handleSubmit = async (e) => {
-//   e.preventDefault();
-
-//   const validationErrors = validate();
-
-//   if (Object.keys(validationErrors).length > 0) {
-//     setErrors(validationErrors);
-//     return;
-//   }
-
-//   setErrors({});
-
-//   try {
-//     const response = await fetch(
-//       "https://fitzy-f7uv.onrender.com/api/v1/register",
-//       {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           email: formData.email,
-//           password: formData.password,
-//         }),
-//       }
-//     );
-
-//     const data = await response.json();
-
-//     if (response.ok) {
-
-//   const loginResponse = await fetch(
-//     "https://fitzy-f7uv.onrender.com/api/v1/login",
-//     {
-//       method: "POST",
-//       headers: {
-//         "Content-Type":
-//           "application/x-www-form-urlencoded",
-//       },
-//       body: new URLSearchParams({
-//         username: formData.email,
-//         password: formData.password,
-//       }),
-//     }
-//   );
-
-//   const loginData = await loginResponse.json();
-
-//   if (loginResponse.ok) {
-//     localStorage.setItem(
-//       "token",
-//       loginData.access_token
-//     );
-
-//     navigate("/dashboard");
-//   }
-// } else {
-//       alert(data.detail || "Registration failed");
-//     }
-//   } catch (error) {
-//     console.error(error);
-//     alert("Server error. Please try again.");
-//   }
-// };
-
-//   return (
-//     <div className="min-h-screen bg-[#F8F6F2] flex items-center justify-center px-4 py-10">
-
-//       <form
-//         onSubmit={handleSubmit}
-//         className="
-//         w-full
-//         max-w-md
-//         bg-white
-//         border-2
-//         border-black
-//         rounded-[30px]
-//         p-8
-//         shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
-//         "
-//       >
-//         <h1 className="text-4xl font-black text-center mb-2">
-//           Create Account
-//         </h1>
-
-//         <p className="text-center text-gray-500 mb-8">
-//           Start your AI styling journey
-//         </p>
-
-//         <div className="space-y-4">
-
-//           {/* Full Name */}
-//           <div>
-//             <label className="font-semibold block mb-2">
-//               Full Name *
-//             </label>
-
-//             <input
-//               type="text"
-//               placeholder="Enter your name"
-//               value={formData.fullName}
-//               onChange={(e) =>
-//                 setFormData({
-//                   ...formData,
-//                   fullName: e.target.value,
-//                 })
-//               }
-//               className="
-//               w-full
-//               px-4
-//               py-3
-//               border-2
-//               border-black
-//               rounded-xl
-//               outline-none
-//               "
-//             />
-
-//             {errors.fullName && (
-//               <p className="text-red-500 text-sm mt-1">
-//                 {errors.fullName}
-//               </p>
-//             )}
-//           </div>
-
-//           <div>
-//             <label className="font-semibold block mb-2">
-//               Email *
-//             </label>
-
-//             <input
-//               type="email"
-//               placeholder="Enter your email"
-//               value={formData.email}
-//               onChange={(e) =>
-//                 setFormData({
-//                   ...formData,
-//                   email: e.target.value,
-//                 })
-//               }
-//               className="
-//               w-full
-//               px-4
-//               py-3
-//               border-2
-//               border-black
-//               rounded-xl
-//               outline-none
-//               "
-//             />
-
-//             {errors.email && (
-//               <p className="text-red-500 text-sm mt-1">
-//                 {errors.email}
-//               </p>
-//             )}
-//           </div>
-
-//           <div>
-//             <label className="font-semibold block mb-2">
-//               Phone Number *
-//             </label>
-
-//             <input
-//               type="tel"
-//               placeholder="9876543210"
-//               value={formData.phone}
-//               onChange={(e) =>
-//                 setFormData({
-//                   ...formData,
-//                   phone: e.target.value,
-//                 })
-//               }
-//               className="
-//               w-full
-//               px-4
-//               py-3
-//               border-2
-//               border-black
-//               rounded-xl
-//               outline-none
-//               "
-//             />
-
-//             {errors.phone && (
-//               <p className="text-red-500 text-sm mt-1">
-//                 {errors.phone}
-//               </p>
-//             )}
-//           </div>
-
-//           <div>
-//             <label className="font-semibold block mb-2">
-//               Password *
-//             </label>
-
-//             <input
-//               type="password"
-//               placeholder="Minimum 6 characters"
-//               value={formData.password}
-//               onChange={(e) =>
-//                 setFormData({
-//                   ...formData,
-//                   password: e.target.value,
-//                 })
-//               }
-//               className="
-//               w-full
-//               px-4
-//               py-3
-//               border-2
-//               border-black
-//               rounded-xl
-//               outline-none
-//               "
-//             />
-
-//             {errors.password && (
-//               <p className="text-red-500 text-sm mt-1">
-//                 {errors.password}
-//               </p>
-//             )}
-//           </div>
-
-//           <div>
-//             <label className="font-semibold block mb-2">
-//               Confirm Password *
-//             </label>
-
-//             <input
-//               type="password"
-//               placeholder="Re-enter password"
-//               value={formData.confirmPassword}
-//               onChange={(e) =>
-//                 setFormData({
-//                   ...formData,
-//                   confirmPassword: e.target.value,
-//                 })
-//               }
-//               className="
-//               w-full
-//               px-4
-//               py-3
-//               border-2
-//               border-black
-//               rounded-xl
-//               outline-none
-//               "
-//             />
-
-//             {errors.confirmPassword && (
-//               <p className="text-red-500 text-sm mt-1">
-//                 {errors.confirmPassword}
-//               </p>
-//             )}
-//           </div>
-
-//           <button
-//             type="submit"
-//             className="
-//             w-full
-//             mt-2
-//             bg-orange-500
-//             text-white
-//             py-3
-//             rounded-xl
-//             border-2
-//             border-black
-//             font-bold
-//             shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
-//             hover:translate-x-[2px]
-//             hover:translate-y-[2px]
-//             hover:shadow-none
-//             transition-all
-//             "
-//           >
-//             Sign Up
-//           </button>
-//         </div>
-
-//         <p className="text-center mt-6">
-//           Already have an account?{" "}
-//           <Link
-//             to="/login"
-//             className="text-orange-500 font-bold"
-//           >
-//             Login
-//           </Link>
-//         </p>
-//       </form>
-
-//     </div>
-//   );
-// }
-
-// export default Register;
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DotmSquare18 } from "@/components/ui/dotm-square-18";
 
 function Register() {
   const navigate = useNavigate();
@@ -372,6 +20,8 @@ function Register() {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
   const validate = () => {
     let newErrors = {};
@@ -379,338 +29,252 @@ function Register() {
     if (!formData.fullName.trim()) {
       newErrors.fullName = "Full Name is required";
     } else if (formData.fullName.length < 3) {
-      newErrors.fullName =
-        "Name must be at least 3 characters";
+      newErrors.fullName = "Name must be at least 3 characters";
     }
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (
-      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
-        formData.email
-      )
+      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
     ) {
-      newErrors.email = "Enter a valid email";
+      newErrors.email = "Enter a valid email address";
     }
 
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone Number is required";
     } else if (!/^[0-9]{10}$/.test(formData.phone)) {
-      newErrors.phone =
-        "Phone number must be exactly 10 digits";
+      newErrors.phone = "Phone number must be exactly 10 digits";
     }
 
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password =
-        "Password must be at least 6 characters";
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword =
-        "Confirm Password is required";
-    } else if (
-      formData.password !== formData.confirmPassword
-    ) {
-      newErrors.confirmPassword =
-        "Passwords do not match";
+      newErrors.confirmPassword = "Confirm Password is required";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setApiError("");
 
-  const validationErrors = validate();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
 
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    return;
-  }
+    setErrors({});
+    setLoading(true);
 
-  setErrors({});
+    try {
+      const response = await fetch(
+        "https://fitzy-f7uv.onrender.com/api/v1/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
 
-  try {
-    const response = await fetch(
-      "https://fitzy-f7uv.onrender.com/api/v1/register",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const data = await response.json();
+
+      if (response.ok) {
+        // Automatically login the user after successful registration
+        const loginResponse = await fetch(
+          "https://fitzy-f7uv.onrender.com/api/v1/login",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              username: formData.email,
+              password: formData.password,
+            }),
+          }
+        );
+
+        const loginData = await loginResponse.json();
+
+        if (loginResponse.ok) {
+          localStorage.setItem("token", loginData.access_token);
+          navigate("/dashboard");
+        } else {
+          setApiError("Registration succeeded, but auto-login failed. Please login manually.");
+        }
+      } else {
+        setApiError(data.detail || "Registration failed. Please try again.");
       }
-    );
-
-    const data = await response.json();
-
-    if (response.ok) {
-
-  const loginResponse = await fetch(
-    "https://fitzy-f7uv.onrender.com/api/v1/login",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        username: formData.email,
-        password: formData.password,
-      }),
+    } catch (error) {
+      console.error(error);
+      setApiError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  );
-
-  const loginData = await loginResponse.json();
-
-  if (loginResponse.ok) {
-    localStorage.setItem(
-      "token",
-      loginData.access_token
-    );
-
-    navigate("/dashboard");
-  }
-} else {
-      alert(data.detail || "Registration failed");
-    }
-  } catch (error) {
-    console.error(error);
-    alert("Server error. Please try again.");
-  }
-};
+  };
 
   return (
-    <div className="min-h-screen bg-[#F8F6F2] flex items-center justify-center px-4 py-10">
-
-      <form
-        onSubmit={handleSubmit}
-        className="
-        w-full
-        max-w-md
-        bg-white
-        border-2
-        border-black
-        rounded-[30px]
-        p-8
-        shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]
-        "
-      >
-        <h1 className="text-4xl font-black text-center mb-2">
-          Create Account
-        </h1>
-
-        <p className="text-center text-gray-500 mb-8">
-          Start your AI styling journey
-        </p>
-
-        <div className="space-y-4">
-
-          {/* Full Name */}
-          <div>
-            <label className="font-semibold block mb-2">
-              Full Name *
-            </label>
-
-            <input
-              type="text"
-              placeholder="Enter your name"
-              value={formData.fullName}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  fullName: e.target.value,
-                })
-              }
-              className="
-              w-full
-              px-4
-              py-3
-              border-2
-              border-black
-              rounded-xl
-              outline-none
-              "
-            />
-
-            {errors.fullName && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.fullName}
-              </p>
+    <div className="min-h-screen bg-muted/40 flex items-center justify-center px-4 py-10">
+      <Card className="w-full max-w-md shadow-lg border border-border">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-display font-bold">Create Account</CardTitle>
+          <CardDescription>
+            Start your AI styling journey with Fitzy today
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {apiError && (
+              <Alert variant="destructive" className="py-2.5">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{apiError}</AlertDescription>
+              </Alert>
             )}
-          </div>
 
-          <div>
-            <label className="font-semibold block mb-2">
-              Email *
-            </label>
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="John Doe"
+                value={formData.fullName}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    fullName: e.target.value,
+                  })
+                }
+                className={errors.fullName ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.fullName && (
+                <p className="text-destructive text-xs font-medium mt-1">
+                  {errors.fullName}
+                </p>
+              )}
+            </div>
 
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  email: e.target.value,
-                })
-              }
-              className="
-              w-full
-              px-4
-              py-3
-              border-2
-              border-black
-              rounded-xl
-              outline-none
-              "
-            />
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: e.target.value,
+                  })
+                }
+                className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.email && (
+                <p className="text-destructive text-xs font-medium mt-1">
+                  {errors.email}
+                </p>
+              )}
+            </div>
 
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email}
-              </p>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="9876543210"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phone: e.target.value,
+                  })
+                }
+                className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.phone && (
+                <p className="text-destructive text-xs font-medium mt-1">
+                  {errors.phone}
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label className="font-semibold block mb-2">
-              Phone Number *
-            </label>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Minimum 6 characters"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    password: e.target.value,
+                  })
+                }
+                className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.password && (
+                <p className="text-destructive text-xs font-medium mt-1">
+                  {errors.password}
+                </p>
+              )}
+            </div>
 
-            <input
-              type="tel"
-              placeholder="9876543210"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  phone: e.target.value,
-                })
-              }
-              className="
-              w-full
-              px-4
-              py-3
-              border-2
-              border-black
-              rounded-xl
-              outline-none
-              "
-            />
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Re-enter password"
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    confirmPassword: e.target.value,
+                  })
+                }
+                className={errors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.confirmPassword && (
+                <p className="text-destructive text-xs font-medium mt-1">
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
 
-            {errors.phone && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.phone}
-              </p>
-            )}
-          </div>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-4"
+            >
+              {loading && <DotmSquare18 className="mr-2 h-4 w-4 text-current" />}
+              {loading ? "Registering..." : "Sign Up"}
+            </Button>
 
-          <div>
-            <label className="font-semibold block mb-2">
-              Password *
-            </label>
-
-            <input
-              type="password"
-              placeholder="Minimum 6 characters"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  password: e.target.value,
-                })
-              }
-              className="
-              w-full
-              px-4
-              py-3
-              border-2
-              border-black
-              rounded-xl
-              outline-none
-              "
-            />
-
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="font-semibold block mb-2">
-              Confirm Password *
-            </label>
-
-            <input
-              type="password"
-              placeholder="Re-enter password"
-              value={formData.confirmPassword}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  confirmPassword: e.target.value,
-                })
-              }
-              className="
-              w-full
-              px-4
-              py-3
-              border-2
-              border-black
-              rounded-xl
-              outline-none
-              "
-            />
-
-            {errors.confirmPassword && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.confirmPassword}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="
-            w-full
-            mt-2
-            bg-[#8B5CF6] hover:bg-[#D946EF]
-            text-white
-            py-3
-            rounded-xl
-            border-2
-            border-black
-            font-bold
-            shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
-            hover:translate-x-[2px]
-            hover:translate-y-[2px]
-            hover:shadow-none
-            transition-all
-            "
-          >
-            Sign Up
-          </button>
-        </div>
-
-        <p className="text-center mt-6">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-[#8B5CF6] font-bold"
-          >
-            Login
-          </Link>
-        </p>
-      </form>
-
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-primary hover:underline font-semibold"
+              >
+                Log In
+              </Link>
+            </p>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
