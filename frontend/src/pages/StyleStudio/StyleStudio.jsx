@@ -172,19 +172,20 @@ import UploadCard from "./UploadCard";
 import AnalysisCard from "./AnalysisCard";
 import SimilarProducts from "./SimilarProducts";
 import Sidebar from "../Dashboard/Sidebar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function StyleStudio() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [displayAnalysis, setDisplayAnalysis] = useState("");
-const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([]);
 
-const [loadingAnalysis, setLoadingAnalysis] = useState(false);
-const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
-const [analysisError, setAnalysisError] = useState("");
-const [productsError, setProductsError] = useState("");
+  const [analysisError, setAnalysisError] = useState("");
+  const [productsError, setProductsError] = useState("");
 
   const navigate = useNavigate();
 
@@ -286,15 +287,25 @@ try {
 }, [selectedFile]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar
-        activeTab="styleStudio"
-        setActiveTab={() => {}}
-        handleLogout={handleLogout}
-      />
+    <div className="h-screen bg-background overflow-hidden">
+      <Sidebar handleLogout={handleLogout} />
 
-      <main className="lg:ml-[260px]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
+      <main className="lg:ml-[260px] h-full overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+          <Card className="bg-card shadow-none border-0">
+            <CardContent className="flex flex-col gap-4 p-0 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <h3 className="font-display text-2xl font-semibold tracking-tight">
+                  Style Studio
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Analyze your outfit and discover similar recommendations.
+                </p>
+              </div>
+
+            </CardContent>
+          </Card>
+
           <UploadCard
             selectedFile={selectedFile}
             setSelectedFile={setSelectedFile}

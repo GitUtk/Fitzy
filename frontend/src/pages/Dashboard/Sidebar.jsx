@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -5,12 +6,11 @@ import {
   Heart,
   Shirt,
   User,
-  Crown,
   LogOut,
+  SunMedium,
+  MoonStar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
 
 const menuItems = [
   { path: "/dashboard", icon: Home, label: "Dashboard" },
@@ -23,6 +23,23 @@ const menuItems = [
 function Sidebar({ handleLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const initialTheme = savedTheme === "dark" ? "dark" : "light";
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle("dark", initialTheme === "dark");
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme((current) => {
+      const nextTheme = current === "dark" ? "light" : "dark";
+      document.documentElement.classList.toggle("dark", nextTheme === "dark");
+      localStorage.setItem("theme", nextTheme);
+      return nextTheme;
+    });
+  };
 
   return (
     <aside className="hidden lg:flex flex-col w-[260px] h-full fixed left-0 top-0 bg-sidebar border-r border-sidebar-border z-40">
@@ -58,28 +75,23 @@ function Sidebar({ handleLogout }) {
       </nav>
 
       <div className="p-4 space-y-3">
-        <Card className="border-sidebar-border bg-sidebar-accent/50 shadow-none">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <Crown className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-sm font-semibold">Mint Look</span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Unlock unlimited AI styling and premium outfit recommendations.
-            </p>
-            <Button
-              size="sm"
-              className="w-full mt-3"
-              onClick={() => navigate("/pricing")}
-            >
-              Upgrade Now
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Separator />
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 h-10 px-3 font-normal text-muted-foreground hover:text-foreground"
+          onClick={toggleTheme}
+        >
+          {theme === "dark" ? (
+            <>
+              <SunMedium className="h-4 w-4 shrink-0 text-yellow-500" />
+              <span>Light theme</span>
+            </>
+          ) : (
+            <>
+              <MoonStar className="h-4 w-4 shrink-0 text-indigo-500" />
+              <span>Dark theme</span>
+            </>
+          )}
+        </Button>
 
         <Button
           variant="ghost"

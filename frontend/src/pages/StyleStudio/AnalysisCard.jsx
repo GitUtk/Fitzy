@@ -136,7 +136,7 @@ const renderMarkdown = (value) => {
 
 function AnalysisCard({ analysis, loading, error }) {
   return (
-    <Card className="border-zinc-200 shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl font-semibold">Style analysis</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -151,13 +151,13 @@ function AnalysisCard({ analysis, loading, error }) {
         )}
 
         {!analysis && !loading && !error && (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
             Upload an outfit to start the analysis.
           </div>
         )}
 
         {loading && !analysis && (
-          <div className="space-y-3 rounded-xl border border-dashed border-zinc-200 bg-muted/20 p-6">
+          <div className="space-y-3 rounded-xl border border-dashed border-border bg-muted/20 p-6">
             <div className="h-5 w-1/3 rounded bg-muted" />
             <div className="h-4 rounded bg-muted" />
             <div className="h-4 w-11/12 rounded bg-muted" />
@@ -167,7 +167,7 @@ function AnalysisCard({ analysis, loading, error }) {
         )}
 
         {analysis && (
-          <div className="space-y-3 rounded-xl border border-zinc-200 bg-background p-5 text-sm text-foreground">
+          <div className="space-y-3 rounded-xl border border-border bg-background p-5 text-sm text-foreground">
             {renderMarkdown(analysis)}
           </div>
         )}

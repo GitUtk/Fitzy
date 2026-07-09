@@ -83,6 +83,23 @@ function RecentLooks({
     });
   };
 
+  const handleDownload = async (imageUrl, title) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${(title || "outfit").replace(/\s+/g, "_").toLowerCase()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      window.open(imageUrl, "_blank");
+    }
+  };
+
   const displayedLooks = limit ? mergedLooks.slice(0, limit) : mergedLooks;
 
   if (loading && mergedLooks.length === 0) {
@@ -183,13 +200,15 @@ function RecentLooks({
                 <CardDescription>Outfit tried on using Fitzy Virtual Try-On</CardDescription>
               </CardHeader>
 
-              <CardFooter className="p-4 pt-0 gap-2">
-                <Button className="flex-1" size="sm">Try Again</Button>
-                <Button variant="outline" size="icon" className="shrink-0">
+              <CardFooter className="p-4 pt-0">
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  size="sm"
+                  onClick={() => handleDownload(imageUrl, look.title || `Look_${displayedLooks.length - index}`)}
+                >
                   <Download className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="shrink-0">
-                  <Share2 className="h-4 w-4" />
+                  Download Image
                 </Button>
               </CardFooter>
             </Card>

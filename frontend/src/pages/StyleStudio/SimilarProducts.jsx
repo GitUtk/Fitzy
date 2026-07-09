@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function SimilarProducts({ products, loading, error }) {
   return (
-    <Card className="border-zinc-200 shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl font-semibold">Similar products</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -18,13 +18,13 @@ function SimilarProducts({ products, loading, error }) {
         )}
 
         {loading && (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
             Finding matching products...
           </div>
         )}
 
         {!loading && !error && products.length === 0 && (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
             Upload an outfit to discover similar products.
           </div>
         )}
@@ -32,7 +32,7 @@ function SimilarProducts({ products, loading, error }) {
         {products.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2">
             {products.map((item, index) => (
-              <div key={index} className="overflow-hidden rounded-xl border border-zinc-200 bg-background">
+              <div key={index} className="overflow-hidden rounded-xl border border-border bg-background">
                 <img
                   src={item.image_url}
                   alt={item.title}

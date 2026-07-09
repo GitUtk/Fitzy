@@ -1260,6 +1260,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export const PROFILE_FIELDS = [
   "fullName",
@@ -1293,6 +1302,8 @@ export const calculateCompletion = (profileData) => {
 function Profile({ isSetupMode = false }) {
   const navigate = useNavigate();
   const [completion, setCompletion] = useState(0);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
   
   const [profile, setProfile] = useState({
     fullName: "",
@@ -1425,7 +1436,7 @@ function Profile({ isSetupMode = false }) {
         if (isSetupMode) {
           navigate("/dashboard");
         } else {
-          alert("Profile Saved Successfully");
+          setShowSuccessModal(true);
         }
       } else {
         const errData = await response.json();
@@ -1443,41 +1454,49 @@ function Profile({ isSetupMode = false }) {
 
   if (error) {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center space-y-4 text-black">
+      <div className="max-w-md mx-auto mt-20 text-center space-y-4 text-foreground">
         <p className="text-destructive font-medium">{error}</p>
       </div>
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center text-black">
-        <p className="text-sm text-muted-foreground animate-pulse">Loading profile...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 text-black">
+    <div className={`max-w-7xl mx-auto text-foreground space-y-6 ${isSetupMode ? "px-4 sm:px-6 py-8" : ""}`}>
       <div className="grid gap-6">
-        <Card className="border-zinc-200 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeader className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Profile</p>
+              <p className="text-sm font-medium text-muted-foreground">Profile Settings</p>
               <CardTitle className="text-3xl font-bold tracking-tight">
-                {profile.fullName || "Your Name"}
+                {loading ? (
+                  <Skeleton className="h-9 w-64 mt-1" />
+                ) : (
+                  profile.fullName || "Your Name"
+                )}
               </CardTitle>
             </div>
             <div className="grid gap-4 rounded-2xl bg-muted/40 p-4 sm:grid-cols-2">
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
-                <p className="mt-1 text-sm font-medium">
-                  {profile.email || "example@email.com"}
-                </p>
+                <div className="mt-1">
+                  {loading ? (
+                    <Skeleton className="h-5 w-48 animate-pulse bg-muted" />
+                  ) : (
+                    <p className="text-sm font-medium">
+                      {profile.email || "example@email.com"}
+                    </p>
+                  )}
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Completion</p>
-                <p className="mt-1 text-sm font-medium">{completion}%</p>
+                <div className="mt-1">
+                  {loading ? (
+                    <Skeleton className="h-5 w-16 animate-pulse bg-muted" />
+                  ) : (
+                    <p className="text-sm font-medium">{completion}%</p>
+                  )}
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -1492,224 +1511,316 @@ function Profile({ isSetupMode = false }) {
         </Card>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card className="border-zinc-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Basic Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="fullName">Full name</Label>
-              <Input
-                id="fullName"
-                value={profile.fullName}
-                onChange={(e) => handleInputChange("fullName", e.target.value)}
-                placeholder="Enter your full name"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                placeholder="Enter your email"
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="age">Age</Label>
-                <Input
-                  id="age"
-                  value={profile.age}
-                  onChange={(e) => handleInputChange("age", e.target.value)}
-                  placeholder="Age"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="gender">Gender</Label>
-                <select
-                  id="gender"
-                  value={profile.gender}
-                  onChange={(e) => handleInputChange("gender", e.target.value)}
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">Select gender</option>
-                  <option>Female</option>
-                  <option>Male</option>
-                  <option>Other</option>
-                </select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Body Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="height">Height</Label>
-              <Input
-                id="height"
-                value={profile.height}
-                onChange={(e) => handleInputChange("height", e.target.value)}
-                placeholder="Height in cm"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="bodyType">Body type</Label>
-              <select
-                id="bodyType"
-                value={profile.bodyType}
-                onChange={(e) => handleInputChange("bodyType", e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Select body type</option>
-                <option>Slim</option>
-                <option>Athletic</option>
-                <option>Curvy</option>
-                <option>Plus Size</option>
-              </select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="fitPreference">Fit preference</Label>
-              <select
-                id="fitPreference"
-                value={profile.fitPreference}
-                onChange={(e) => handleInputChange("fitPreference", e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Select fit preference</option>
-                <option>Slim Fit</option>
-                <option>Regular Fit</option>
-                <option>Relaxed Fit</option>
-              </select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Style Preferences</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-          {stylesList.map((style) => (
+      <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+        {/* Navigation Sidebar */}
+        <div className="flex flex-col gap-2">
+          {[
+            { id: "personal", label: "Personal Details", desc: "Name, email, and basic info" },
+            { id: "body", label: "Body & Sizes", desc: "Measurements and size preferences" },
+            { id: "preferences", label: "Styles & Colors", desc: "Fav styles, colors, and budget" },
+          ].map((tab) => (
             <button
-              key={style}
+              key={tab.id}
               type="button"
-              onClick={() => toggleValue("styles", style)}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-all
-                ${
-                  (profile.styles || []).includes(style)
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-zinc-200 bg-background hover:bg-muted"
-                }`}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full text-left p-4 rounded-xl border transition-all ${
+                activeTab === tab.id
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border bg-background hover:bg-muted text-muted-foreground"
+              }`}
             >
-              {style}
+              <p className="font-semibold text-sm">{tab.label}</p>
+              <p className="text-xs opacity-80 mt-0.5">{tab.desc}</p>
             </button>
           ))}
-            </div>
-          </CardContent>
-        </Card>
+        </div>
 
-        <Card className="border-zinc-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Favourite Colours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-          {colorsList.map((color) => (
-            <button
-              key={color}
-              type="button"
-              onClick={() => toggleValue("colors", color)}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-all
-                ${
-                  (profile.colors || []).includes(color)
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-zinc-200 bg-background hover:bg-muted"
-                }`}
-            >
-              {color}
-            </button>
-          ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tab content */}
+        <div>
+          {activeTab === "personal" && (
+            <Card className="border-border shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold">Personal Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="fullName">Full name</Label>
+                  {loading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Input
+                      id="fullName"
+                      value={profile.fullName}
+                      onChange={(e) => handleInputChange("fullName", e.target.value)}
+                      placeholder="Enter your full name"
+                    />
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  {loading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profile.email}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      placeholder="Enter your email"
+                    />
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="age">Age</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <Input
+                        id="age"
+                        value={profile.age}
+                        onChange={(e) => handleInputChange("age", e.target.value)}
+                        placeholder="Age"
+                      />
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <select
+                        id="gender"
+                        value={profile.gender}
+                        onChange={(e) => handleInputChange("gender", e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Select gender</option>
+                        <option>Female</option>
+                        <option>Male</option>
+                        <option>Other</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        <Card className="border-zinc-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Sizes & Budget</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="grid gap-2">
-                <Label htmlFor="topSize">Top size</Label>
-                <select
-                  id="topSize"
-                  value={profile.topSize}
-                  onChange={(e) => handleInputChange("topSize", e.target.value)}
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">Select</option>
-                  <option>XS</option>
-                  <option>S</option>
-                  <option>M</option>
-                  <option>L</option>
-                  <option>XL</option>
-                </select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="bottomSize">Bottom size</Label>
-                <select
-                  id="bottomSize"
-                  value={profile.bottomSize}
-                  onChange={(e) => handleInputChange("bottomSize", e.target.value)}
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">Select</option>
-                  <option>26</option>
-                  <option>28</option>
-                  <option>30</option>
-                  <option>32</option>
-                  <option>34</option>
-                  <option>36</option>
-                  <option>38</option>
-                  <option>40</option>
-                  <option>42</option>
-                </select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="shoeSize">Shoe size</Label>
-                <Input
-                  id="shoeSize"
-                  value={profile.shoeSize}
-                  onChange={(e) => handleInputChange("shoeSize", e.target.value)}
-                  placeholder="Shoe size"
-                />
-              </div>
+          {activeTab === "body" && (
+            <Card className="border-border shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold">Body Details & Sizes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="height">Height</Label>
+                  {loading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Input
+                      id="height"
+                      value={profile.height}
+                      onChange={(e) => handleInputChange("height", e.target.value)}
+                      placeholder="Height in cm"
+                    />
+                  )}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="bodyType">Body type</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <select
+                        id="bodyType"
+                        value={profile.bodyType}
+                        onChange={(e) => handleInputChange("bodyType", e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Select body type</option>
+                        <option>Slim</option>
+                        <option>Athletic</option>
+                        <option>Curvy</option>
+                        <option>Plus Size</option>
+                      </select>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="fitPreference">Fit preference</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <select
+                        id="fitPreference"
+                        value={profile.fitPreference}
+                        onChange={(e) => handleInputChange("fitPreference", e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Select fit preference</option>
+                        <option>Slim Fit</option>
+                        <option>Regular Fit</option>
+                        <option>Relaxed Fit</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="topSize">Top size</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <select
+                        id="topSize"
+                        value={profile.topSize}
+                        onChange={(e) => handleInputChange("topSize", e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Select</option>
+                        <option>XS</option>
+                        <option>S</option>
+                        <option>M</option>
+                        <option>L</option>
+                        <option>XL</option>
+                      </select>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="bottomSize">Bottom size</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <select
+                        id="bottomSize"
+                        value={profile.bottomSize}
+                        onChange={(e) => handleInputChange("bottomSize", e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Select</option>
+                        <option>26</option>
+                        <option>28</option>
+                        <option>30</option>
+                        <option>32</option>
+                        <option>34</option>
+                        <option>36</option>
+                        <option>38</option>
+                        <option>40</option>
+                        <option>42</option>
+                      </select>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shoeSize">Shoe size</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <Input
+                        id="shoeSize"
+                        value={profile.shoeSize}
+                        onChange={(e) => handleInputChange("shoeSize", e.target.value)}
+                        placeholder="Shoe size"
+                      />
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "preferences" && (
+            <div className="space-y-6">
+              <Card className="border-border shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold">Style Preferences</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {loading ? (
+                      Array.from({ length: 8 }).map((_, i) => (
+                        <Skeleton key={i} className="h-9 w-24 rounded-full" />
+                      ))
+                    ) : (
+                      stylesList.map((style) => (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => toggleValue("styles", style)}
+                          className={`rounded-full border px-4 py-2 text-sm font-medium transition-all
+                            ${
+                              (profile.styles || []).includes(style)
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background hover:bg-muted"
+                            }`}
+                        >
+                          {style}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold">Favourite Colours</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {loading ? (
+                      Array.from({ length: 8 }).map((_, i) => (
+                        <Skeleton key={i} className="h-9 w-24 rounded-full" />
+                      ))
+                    ) : (
+                      colorsList.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => toggleValue("colors", color)}
+                          className={`rounded-full border px-4 py-2 text-sm font-medium transition-all
+                            ${
+                              (profile.colors || []).includes(color)
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background hover:bg-muted"
+                            }`}
+                        >
+                          {color}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold">Budget Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="budget">Budget</Label>
+                    {loading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <select
+                        id="budget"
+                        value={profile.budget}
+                        onChange={(e) => handleInputChange("budget", e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Select budget</option>
+                        <option>Under ₹1000</option>
+                        <option>₹1000 - ₹3000</option>
+                        <option>₹3000 - ₹5000</option>
+                        <option>₹5000+</option>
+                      </select>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="budget">Budget</Label>
-              <select
-                id="budget"
-                value={profile.budget}
-                onChange={(e) => handleInputChange("budget", e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Select budget</option>
-                <option>Under ₹1000</option>
-                <option>₹1000 - ₹3000</option>
-                <option>₹3000 - ₹5000</option>
-                <option>₹5000+</option>
-              </select>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
 
       <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -1718,10 +1829,26 @@ function Profile({ isSetupMode = false }) {
             Skip for now
           </Button>
         )}
-        <Button onClick={handleSave} className="sm:min-w-40">
+        <Button onClick={handleSave} className="sm:min-w-40" disabled={loading}>
           Save profile
         </Button>
       </div>
+
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Success</DialogTitle>
+            <DialogDescription>
+              Your profile preferences and details have been successfully saved to the database.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowSuccessModal(false)} className="w-full sm:w-auto">
+              Okay
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -151,7 +151,7 @@ function MyWardrobe() {
       : items.filter((item) => item.category === activeCategory);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-semibold tracking-tight">My Wardrobe</h2>

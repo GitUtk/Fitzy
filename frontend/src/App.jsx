@@ -30,7 +30,6 @@ import Dashboard, {
   DashboardProfile,
   DashboardWardrobe,
 } from "./pages/Dashboard/Dashboard";
-import Pricing from "./pages/Pricing/Pricing";
 import StyleStudio from "./pages/StyleStudio/StyleStudio";
 import ProfileSetup from "./pages/ProfileSetup/ProfileSetup";
 
@@ -47,7 +46,6 @@ function App() {
         <Route path="my-wardrobe" element={<DashboardWardrobe />} />
         <Route path="profile" element={<DashboardProfile />} />
       </Route>
-      <Route path="/pricing" element={<Pricing />} />
       <Route path="/style-studio" element={<StyleStudio />} />
     </Routes>
   );

@@ -63,7 +63,7 @@ function UploadCard({
   };
 
   return (
-    <Card className="border-zinc-200 shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl font-semibold">Upload outfit</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -79,7 +79,7 @@ function UploadCard({
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           className={`rounded-2xl border border-dashed p-6 sm:p-8 transition-colors ${
-            dragging ? "border-primary bg-primary/5" : "border-zinc-200 bg-muted/20"
+            dragging ? "border-primary bg-primary/5" : "border-border bg-muted/20"
           }`}
         >
           <input
@@ -92,7 +92,7 @@ function UploadCard({
 
           {!preview ? (
             <div className="flex flex-col items-center gap-4 text-center">
-              <div className="rounded-full border border-zinc-200 bg-background px-5 py-2 text-sm font-medium text-muted-foreground">
+              <div className="rounded-full border border-border bg-background px-5 py-2 text-sm font-medium text-muted-foreground">
                 Drop image here
               </div>
               <div className="space-y-2">
@@ -110,7 +110,7 @@ function UploadCard({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="overflow-hidden rounded-xl border border-zinc-200 bg-background">
+              <div className="overflow-hidden rounded-xl border border-border bg-background">
                 <img src={preview} alt="Preview" className="h-auto max-h-[520px] w-full object-contain" />
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -132,7 +132,7 @@ function UploadCard({
         )}
 
         {uploadedImage?.secure_url && (
-          <div className="mt-4 rounded-xl border border-zinc-200 bg-muted/20 p-4 text-sm text-muted-foreground">
+          <div className="mt-4 rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
             Upload saved successfully.
           </div>
         )}
