@@ -31,6 +31,9 @@ const UploadSection = ({ onUploadSuccess }) => {
   const [tryOnLoading, setTryOnLoading] = useState(false);
   const [tryOnImageUrl, setTryOnImageUrl] = useState("");
   const [analysis, setAnalysis] = useState("");
+  const [showingOriginal, setShowingOriginal] = useState(false);
+  const [tryOnProgress, setTryOnProgress] = useState(0);
+  const [tryOnDisplayText, setTryOnDisplayText] = useState("");
   const fileInputRef = useRef(null);
 
   const inferCategory = (category) => {
@@ -70,11 +73,44 @@ const UploadSection = ({ onUploadSuccess }) => {
     }
   };
 
-  const handleTryOnPreview = async () => {
-    if (!selectedProduct) return;
+  const handleTryOnPreview = async (productToTry = selectedProduct) => {
+    if (!productToTry) return;
 
     setTryOnLoading(true);
+    setTryOnProgress(0);
+    setTryOnDisplayText("");
     setError(null);
+    setShowingOriginal(false);
+
+    // Use the actual Gemini critique text returned from style generation
+    const criticText = analysis || "Your custom style recommendations are being integrated. Based on your input, the AI Stylist is processing matching clothing options to adapt to your style and profile.";
+
+    // Start 40-second progress interval
+    const totalDuration = 40000; // 40 seconds
+    const progressIntervalTime = 100; // update every 100ms
+    const totalSteps = totalDuration / progressIntervalTime; // 400 steps
+    let currentStep = 0;
+
+    // We want the text to type out gradually over the first ~35 seconds
+    const typeEndStep = Math.floor(totalSteps * 0.85); // finish typing by 85% progress
+
+    const intervalId = setInterval(() => {
+      currentStep++;
+      const progressPercent = (currentStep / totalSteps) * 100;
+      setTryOnProgress(Math.min(progressPercent, 100));
+
+      // Calculate how many characters to show
+      if (currentStep <= typeEndStep) {
+        const charIndex = Math.floor((currentStep / typeEndStep) * criticText.length);
+        setTryOnDisplayText(criticText.slice(0, charIndex));
+      } else {
+        setTryOnDisplayText(criticText);
+      }
+
+      if (currentStep >= totalSteps) {
+        clearInterval(intervalId);
+      }
+    }, progressIntervalTime);
 
     try {
       const token = localStorage.getItem("token");
@@ -84,12 +120,13 @@ const UploadSection = ({ onUploadSuccess }) => {
 
       const photoFile = fileInputRef.current?.files?.[0];
       const formData = new FormData();
-      formData.append("garment_url", selectedProduct.image_url || selectedProduct.image || selectedProduct.product_url || "");
-      formData.append("category", inferCategory(selectedProduct.category));
+      formData.append("garment_url", productToTry.image_url || productToTry.image || productToTry.product_url || "");
+      formData.append("category", inferCategory(productToTry.category));
       if (photoFile) {
         formData.append("file", photoFile);
       }
 
+      // Start fetching immediately in parallel with the 40-second animation
       const response = await fetch(`${API_BASE_URL}/recommendations/tryon`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -106,14 +143,21 @@ const UploadSection = ({ onUploadSuccess }) => {
         throw new Error("No try-on image was returned.");
       }
 
-      setTryOnImageUrl(generatedImage);
-      setShowTryOn(true);
-      saveTriedOnLook(selectedProduct, generatedImage);
+      // Wait until the 40-second animation completes before showing the result
+      const timeElapsed = currentStep * progressIntervalTime;
+      const timeRemaining = Math.max(0, totalDuration - timeElapsed);
+
+      setTimeout(() => {
+        setTryOnImageUrl(generatedImage);
+        setTryOnLoading(false);
+        saveTriedOnLook(productToTry, generatedImage);
+      }, timeRemaining);
+
     } catch (err) {
+      clearInterval(intervalId);
+      setTryOnLoading(false);
       console.error(err);
       setError(err.message || "The try-on preview could not be generated right now.");
-    } finally {
-      setTryOnLoading(false);
     }
   };
 
@@ -331,12 +375,81 @@ const UploadSection = ({ onUploadSuccess }) => {
           />
 
           {preview ? (
-            <div className="relative">
-              <img src={preview} alt="preview" className="h-[380px] w-full object-contain bg-background" />
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={showingOriginal ? preview : (tryOnImageUrl || preview)}
+                alt="preview"
+                className="h-[380px] w-full object-contain bg-background"
+              />
+              {tryOnImageUrl && !tryOnLoading && (
+                <div className="absolute top-4 right-4 flex gap-1 bg-background/90 backdrop-blur-sm p-1 rounded-full border border-border shadow-sm">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant={showingOriginal ? "default" : "ghost"}
+                    className="h-6 rounded-full text-[10px] px-2.5"
+                    onClick={() => setShowingOriginal(true)}
+                  >
+                    Original
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant={!showingOriginal ? "default" : "ghost"}
+                    className="h-6 rounded-full text-[10px] px-2.5"
+                    onClick={() => setShowingOriginal(false)}
+                  >
+                    Try-On Result
+                  </Button>
+                </div>
+              )}
               {loading && (
                 <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center">
                   <DotmSquare18 className="h-10 w-10 text-primary" />
                   <p className="mt-4 text-sm font-medium">Uploading your look...</p>
+                </div>
+              )}
+              {tryOnLoading && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-lg flex flex-col justify-between p-6 text-center select-none z-10 rounded-lg animate-fade-in">
+
+                  {/* Top Bar */}
+                  <div className="flex items-center justify-between w-full border-b border-border/40 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                      </span>
+                      <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">AI Stylist Analysis</span>
+                    </div>
+                    <span className="text-[10px] font-mono tabular-nums text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-full border border-border/30">
+                      {Math.max(0, Math.ceil(40 - (tryOnProgress * 0.4)))}s remaining
+                    </span>
+                  </div>
+
+                  {/* Main Critique Content */}
+                  <div className="flex-1 flex flex-col justify-center px-2 py-4">
+                    <div className="max-w-md mx-auto text-left space-y-2">
+                      <span className="text-[10px] font-semibold text-primary uppercase tracking-widest block">Live Feedback</span>
+                      <p className="text-xs md:text-sm font-medium leading-relaxed text-foreground/80 italic min-h-[90px]">
+                        "{tryOnDisplayText || 'Analyzing style components...'}"
+                        <span className="inline-block w-1 h-3.5 bg-primary ml-1 animate-pulse align-middle" />
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bottom Progress */}
+                  <div className="w-full space-y-2 pt-3 border-t border-border/40">
+                    <div className="h-1 w-full bg-muted/40 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-100 ease-linear"
+                        style={{ width: `${tryOnProgress}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
+                      <span>Synthesizing clothing texture...</span>
+                      <span>{Math.round(tryOnProgress)}%</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -381,101 +494,77 @@ const UploadSection = ({ onUploadSuccess }) => {
           </Button>
         </div>
 
-        {analysis && (
-          <Card className="bg-muted/30 shadow-none">
-            <CardContent className="p-4">
-              <Badge variant="secondary" className="mb-2">Stylist notes</Badge>
-              <p className="text-sm text-muted-foreground whitespace-pre-line">{analysis}</p>
-            </CardContent>
-          </Card>
-        )}
+
 
         {recommendations.length > 0 && (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="shadow-none">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Clothing options</CardTitle>
-                  <span className="text-xs text-muted-foreground">Tap to preview</span>
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                {recommendations.map((item, index) => {
-                  const imageUrl = item.image_url || item.image || item.product_url;
-                  const isSelected =
-                    selectedProduct?.product_id === item.product_id ||
-                    selectedProduct?.title === item.title;
+          <Card className="shadow-none border border-border bg-card">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold">Clothing Options</CardTitle>
+                <span className="text-xs text-muted-foreground">Click "Try On" to preview style directly on your photo</span>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+              {recommendations.map((item, index) => {
+                const imageUrl = item.image_url || item.image || item.product_url;
+                const isSelected =
+                  selectedProduct?.product_id === item.product_id ||
+                  selectedProduct?.title === item.title;
 
-                  return (
-                    <button
-                      key={`${item.product_id || item.title || index}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedProduct(item);
-                        setShowTryOn(false);
-                        setTryOnImageUrl("");
-                      }}
-                      className={cn(
-                        "rounded-lg border p-3 text-left transition-all hover:shadow-sm",
-                        isSelected ? "border-primary bg-accent ring-1 ring-primary/20" : "border-border bg-card"
-                      )}
-                    >
-                      {imageUrl ? (
-                        <img src={imageUrl} alt={item.title || "Suggested clothing"} className="h-28 w-full rounded-md object-cover" />
-                      ) : (
-                        <div className="flex h-28 items-center justify-center rounded-md border border-dashed bg-muted text-sm text-muted-foreground">
-                          Preview image
-                        </div>
-                      )}
-                      <p className="mt-2 font-medium text-sm">{item.title || "Suggested piece"}</p>
-                      <p className="text-xs text-muted-foreground">{item.category || "Fashion pick"}</p>
-                    </button>
-                  );
-                })}
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-none">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="text-base">Virtual try-on preview</CardTitle>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleTryOnPreview}
-                    disabled={!selectedProduct || tryOnLoading}
+                return (
+                  <div
+                    key={`${item.product_id || item.title || index}`}
+                    onClick={() => {
+                      setSelectedProduct(item);
+                    }}
+                    className={cn(
+                      "rounded-lg border p-3 text-left transition-all hover:shadow-sm cursor-pointer flex flex-col justify-between h-full relative group",
+                      isSelected ? "border-primary bg-accent ring-1 ring-primary/20" : "border-border bg-card"
+                    )}
                   >
-                    {tryOnLoading && <DotmSquare18 className="h-4 w-4 text-current" />}
-                    {tryOnLoading ? "Generating..." : "Show outfit on you"}
-                  </Button>
-                </div>
-                <CardDescription>
-                  Pick an outfit and press the button to preview it over your uploaded photo.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="relative overflow-hidden rounded-lg border bg-muted/30">
-                  {preview && (
-                    <img src={preview} alt="person preview" className="h-[300px] w-full object-contain bg-background" />
-                  )}
-                  {showTryOn && (tryOnImageUrl || selectedProduct) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/20 to-transparent">
-                      <img
-                        src={tryOnImageUrl || selectedProduct.image_url || selectedProduct.image || selectedProduct.product_url}
-                        alt={selectedProduct?.title || "Selected outfit"}
-                        className="h-full w-full object-contain bg-background"
-                      />
+                    <div>
+                      <div className="relative h-28 w-full overflow-hidden rounded-md bg-muted">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={item.title || "Suggested clothing"}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center border border-dashed text-sm text-muted-foreground">
+                            Preview image
+                          </div>
+                        )}
+                        {item.price !== undefined && item.price !== null && (
+                          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <span className="bg-background text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border shadow-sm">
+                              {typeof item.price === "number" ? `$${item.price.toFixed(2)}` : `$${item.price}`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-2 font-medium text-sm line-clamp-1">{item.title || "Suggested piece"}</p>
+                      <p className="text-xs text-muted-foreground mb-3">{item.category || "Fashion pick"}</p>
                     </div>
-                  )}
-                  {!showTryOn && selectedProduct && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-center text-sm font-medium text-muted-foreground">
-                      Press "Show outfit on you" to view the try-on preview.
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full text-xs font-semibold"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(item);
+                        handleTryOnPreview(item);
+                      }}
+                      disabled={tryOnLoading}
+                    >
+                      Try On
+                    </Button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
         )}
 
         {success && (
@@ -485,12 +574,7 @@ const UploadSection = ({ onUploadSuccess }) => {
           </Alert>
         )}
 
-        {isMock && (
-          <Alert variant="warning">
-            <ImageIcon className="h-4 w-4" />
-            <AlertDescription>Running in demo mode.</AlertDescription>
-          </Alert>
-        )}
+
 
         {error && (
           <Alert variant="destructive">

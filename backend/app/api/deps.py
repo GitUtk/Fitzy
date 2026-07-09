@@ -16,4 +16,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"email": user["email"], "id": str(user["_id"])}
+    # Return all user details (converting _id to id and excluding password)
+    user_data = {k: v for k, v in user.items() if k != "password"}
+    user_data["id"] = str(user_data.pop("_id"))
+    return user_data

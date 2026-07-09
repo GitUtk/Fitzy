@@ -1310,39 +1310,57 @@ function Profile({ isSetupMode = false }) {
     colors: [],
   });
 
-  // useEffect(() => {
-  //   const saved = localStorage.getItem("userProfile");
-  //   if (saved) {
-  //     try {
-  //       const parsed = JSON.parse(saved);
-  //       setProfile(parsed);
-  //       setCompletion(calculateCompletion(parsed));
-  //     } catch (e) {
-  //       console.error(e);
-  //     }
-  //   }
-  // }, []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
+
   useEffect(() => {
-  const saved = localStorage.getItem("userProfile");
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("You must be logged in to view your profile.");
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/me`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const formattedData = {
+            fullName: data.fullName || "",
+            email: data.email || "",
+            gender: data.gender || "",
+            age: data.age || "",
+            height: data.height || "",
+            bodyType: data.bodyType || "",
+            fitPreference: data.fitPreference || "",
+            budget: data.budget || "",
+            topSize: data.topSize || "",
+            bottomSize: data.bottomSize || "",
+            shoeSize: data.shoeSize || "",
+            styles: Array.isArray(data.styles) ? data.styles : [],
+            colors: Array.isArray(data.colors) ? data.colors : [],
+          };
+          setProfile(formattedData);
+          setCompletion(calculateCompletion(formattedData));
+        } else {
+          setError("Failed to fetch profile details.");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("An error occurred while loading profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-
-      setProfile((prev) => {
-        const merged = {
-          ...prev,
-          ...parsed,
-        };
-
-        setCompletion(calculateCompletion(merged));
-        return merged;
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  }
-}, []);
+    fetchProfile();
+  }, []);
 
   const stylesList = [
     "Casual",
@@ -1366,46 +1384,56 @@ function Profile({ isSetupMode = false }) {
     "Red",
   ];
 
-  // const toggleValue = (field, value) => {
-  //   let updatedField;
-  //   if (profile[field].includes(value)) {
-  //     updatedField = profile[field].filter((v) => v !== value);
-  //   } else {
-  //     updatedField = [...profile[field], value];
-  //   }
-    
-  //   const newProfile = { ...profile, [field]: updatedField };
-  //   setProfile(newProfile);
-  //   setCompletion(calculateCompletion(newProfile));
-  // };
-
   const toggleValue = (field, value) => {
-  const values = profile[field] || [];
+    const values = profile[field] || [];
 
-  const updatedField = values.includes(value)
-    ? values.filter((v) => v !== value)
-    : [...values, value];
+    const updatedField = values.includes(value)
+      ? values.filter((v) => v !== value)
+      : [...values, value];
 
-  const newProfile = {
-    ...profile,
-    [field]: updatedField,
+    const newProfile = {
+      ...profile,
+      [field]: updatedField,
+    };
+
+    setProfile(newProfile);
+    setCompletion(calculateCompletion(newProfile));
   };
 
-  setProfile(newProfile);
-  setCompletion(calculateCompletion(newProfile));
-};
   const handleInputChange = (field, value) => {
     const newProfile = { ...profile, [field]: value };
     setProfile(newProfile);
     setCompletion(calculateCompletion(newProfile));
   };
 
-  const handleSave = () => {
-    localStorage.setItem("userProfile", JSON.stringify(profile));
-    if (isSetupMode) {
-      navigate("/dashboard");
-    } else {
-      alert("Profile Saved Successfully");
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in to save preferences.");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(profile)
+      });
+      if (response.ok) {
+        if (isSetupMode) {
+          navigate("/dashboard");
+        } else {
+          alert("Profile Saved Successfully");
+        }
+      } else {
+        const errData = await response.json();
+        alert(errData.detail || "Failed to save profile.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving profile. Please try again.");
     }
   };
 
@@ -1413,9 +1441,25 @@ function Profile({ isSetupMode = false }) {
     navigate("/dashboard");
   };
 
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto mt-20 text-center space-y-4 text-black">
+        <p className="text-destructive font-medium">{error}</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center text-black">
+        <p className="text-sm text-muted-foreground animate-pulse">Loading profile...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 text-black">
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-6">
         <Card className="border-zinc-200 shadow-sm">
           <CardHeader className="space-y-4">
             <div>
@@ -1444,31 +1488,6 @@ function Profile({ isSetupMode = false }) {
                 style={{ width: `${completion}%` }}
               />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Profile Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-zinc-200 p-3">
-                <p className="text-xs uppercase tracking-wide">Style picks</p>
-                <p className="mt-1 font-medium text-foreground">
-                  {profile.styles.length || 0}
-                </p>
-              </div>
-              <div className="rounded-xl border border-zinc-200 p-3">
-                <p className="text-xs uppercase tracking-wide">Color picks</p>
-                <p className="mt-1 font-medium text-foreground">
-                  {profile.colors.length || 0}
-                </p>
-              </div>
-            </div>
-            <p>
-              Keep the form concise and accurate so recommendations can stay relevant.
-            </p>
           </CardContent>
         </Card>
       </div>

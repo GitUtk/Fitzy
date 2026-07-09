@@ -45,20 +45,25 @@ function Dashboard() {
     } else {
       fetchLooks();
 
-      const savedProfileStr = localStorage.getItem("userProfile");
-      if (savedProfileStr) {
+      const fetchProfileName = async () => {
         try {
-          const savedProfile = JSON.parse(savedProfileStr);
-          const firstName = (savedProfile.fullName || "")
-            .trim()
-            .split(/\s+/)[0];
-          setUserFirstName(firstName || "there");
+          const response = await fetch("https://fitzy-f7uv.onrender.com/api/v1/me", {
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const firstName = (data.fullName || "").trim().split(/\s+/)[0];
+            setUserFirstName(firstName || "there");
+          } else {
+            setUserFirstName("there");
+          }
         } catch {
           setUserFirstName("there");
         }
-      } else {
-        setUserFirstName("there");
-      }
+      };
+      fetchProfileName();
     }
   }, [navigate]);
 

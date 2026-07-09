@@ -14,7 +14,7 @@ function Register() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    phone: "",
+    gender: "",
     password: "",
     confirmPassword: "",
   });
@@ -40,10 +40,8 @@ function Register() {
       newErrors.email = "Enter a valid email address";
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone Number is required";
-    } else if (!/^[0-9]{10}$/.test(formData.phone)) {
-      newErrors.phone = "Phone number must be exactly 10 digits";
+    if (!formData.gender) {
+      newErrors.gender = "Gender is required";
     }
 
     if (!formData.password) {
@@ -85,6 +83,8 @@ function Register() {
           body: JSON.stringify({
             email: formData.email,
             password: formData.password,
+            fullName: formData.fullName,
+            gender: formData.gender,
           }),
         }
       );
@@ -189,23 +189,28 @@ function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="9876543210"
-                value={formData.phone}
+              <Label htmlFor="gender">Gender</Label>
+              <select
+                id="gender"
+                value={formData.gender}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    phone: e.target.value,
+                    gender: e.target.value,
                   })
                 }
-                className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errors.phone && (
+                className={`h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  errors.gender ? "border-destructive focus-visible:ring-destructive" : ""
+                }`}
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+              {errors.gender && (
                 <p className="text-destructive text-xs font-medium mt-1">
-                  {errors.phone}
+                  {errors.gender}
                 </p>
               )}
             </div>
