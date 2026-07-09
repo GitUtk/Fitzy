@@ -52,13 +52,22 @@ class TryOnService:
             garment_tmp.write(garment_bytes)
             garment_tmp_path = garment_tmp.name
 
+        # Map category/wear_type to Gradio categories: 'tops' or 'bottoms'
+        category_lower = category.lower()
+        if "top" in category_lower or "upper" in category_lower or "shirt" in category_lower or "polo" in category_lower:
+            gradio_category = "tops"
+        elif "bottom" in category_lower or "pants" in category_lower or "jeans" in category_lower or "trouser" in category_lower or "shorts" in category_lower or "joggers" in category_lower or "cargo" in category_lower:
+            gradio_category = "bottoms"
+        else:
+            gradio_category = "tops"  # Default fallback
+
         try:
             client = Client(active_url)
             result = await run_in_threadpool(
                 client.predict,
                 handle_file(person_tmp_path),
                 handle_file(garment_tmp_path),
-                category,
+                gradio_category,
                 "model",
                 1,
                 20,

@@ -122,6 +122,7 @@ class RecommendationService:
                 "price": float(row["price"]) if row["price"] != "" else None,
                 "rating": float(row["rating"]) if row["rating"] != "" else None,
                 "category": row["category"],
+                "wear_type": row.get("wear_type", ""),
                 "product_url": row.get("product_url", "https://www.snitch.com/"),
                 "similarity": similarity_score
             })
@@ -162,6 +163,7 @@ class RecommendationService:
                 "price": float(row["price"]) if row["price"] != "" else None,
                 "rating": float(row["rating"]) if row["rating"] != "" else None,
                 "category": row["category"],
+                "wear_type": row.get("wear_type", ""),
                 "product_url": row.get("product_url", "https://www.snitch.com/")
             })
         return results
