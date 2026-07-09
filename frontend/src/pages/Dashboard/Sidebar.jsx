@@ -43,12 +43,28 @@ function Sidebar({ handleLogout }) {
 
   return (
     <aside className="hidden lg:flex flex-col w-[260px] h-full fixed left-0 top-0 bg-sidebar border-r border-sidebar-border z-40">
-      <div className="px-6 pt-8 pb-6">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-primary">
-          Fitzy
-        </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Your AI stylist</p>
+      <div className="px-6 pt-8 pb-6 flex items-center gap-2.5">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 100 100"
+          fill="none"
+          stroke="#ef4444"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-8 w-8 shrink-0"
+        >
+          <path d="M50 35 C50 20, 65 20, 65 30 C65 38, 50 38, 50 45 C50 48, 50 48, 50 50" />
+          <path d="M50 50 L20 68 C16 70.5, 17 76, 22 76 L78 76 C83 76, 84 70.5, 80 68 L50 50 Z" />
+        </svg>
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-primary leading-none">
+            Fitzy<span className="text-red-500">.</span>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">Your AI stylist</p>
+        </div>
       </div>
+
 
       <nav className="flex flex-col gap-1 px-3 flex-1">
         {menuItems.map((item) => {
