@@ -1414,18 +1414,8 @@ function Profile({ isSetupMode = false }) {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-white text-black">
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(125% 125% at 50% 90%, #ffffff 40%, #ec4899 100%)",
-          backgroundSize: "100% 100%",
-        }}
-      />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 text-black">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="border-zinc-200 shadow-sm">
           <CardHeader className="space-y-4">
             <div>
@@ -1712,7 +1702,6 @@ function Profile({ isSetupMode = false }) {
         <Button onClick={handleSave} className="sm:min-w-40">
           Save profile
         </Button>
-      </div>
       </div>
     </div>
   );

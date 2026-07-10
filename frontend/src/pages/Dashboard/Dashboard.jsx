@@ -84,18 +84,10 @@ function Dashboard() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-white">
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(125% 125% at 50% 90%, #ffffff 40%, #ec4899 100%)",
-          backgroundSize: "100% 100%",
-        }}
-      />
+    <div className="h-screen bg-background overflow-hidden">
       <Sidebar handleLogout={handleLogout} />
 
-      <main className="relative z-10 lg:ml-[260px] h-screen overflow-y-auto">
+      <main className="lg:ml-[260px] h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <Outlet
             context={{

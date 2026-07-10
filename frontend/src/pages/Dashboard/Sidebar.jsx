@@ -25,7 +25,7 @@ function Sidebar({ handleLogout }) {
   const location = useLocation();
 
   return (
-    <aside className="hidden lg:flex flex-col w-[260px] h-full fixed left-0 top-0 bg-transparent border-r border-sidebar-border z-40">
+    <aside className="hidden lg:flex flex-col w-[260px] h-full fixed left-0 top-0 bg-sidebar border-r border-sidebar-border z-40">
       <div className="px-6 pt-8 pb-6">
         <h1 className="font-display text-2xl font-bold tracking-tight text-primary">
           Fitzy
