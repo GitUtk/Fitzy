@@ -79,6 +79,84 @@ async def analyze_outfit_style(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/extract-metadata")
+async def extract_clothing_metadata(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="Gemini API Key is not configured.")
+    try:
+        file_bytes = await file.read()
+        base64_data = base64.b64encode(file_bytes).decode("utf-8")
+        mime_type = file.content_type
+        
+        prompt = (
+            "You are Fitzy's clothing metadata extractor.\n\n"
+            "Analyze the uploaded clothing item.\n\n"
+            "Return ONLY valid JSON.\n\n"
+            "Do not explain anything.\n\n"
+            "If a field is unknown, return null.\n\n"
+            "Use exactly this schema.\n\n"
+            "{\n"
+            "    \"category\":\"\",\n"
+            "    \"subcategory\":\"\",\n"
+            "    \"primaryColor\":\"\",\n"
+            "    \"secondaryColor\":\"\",\n"
+            "    \"pattern\":\"\",\n"
+            "    \"material\":\"\",\n"
+            "    \"fit\":\"\",\n"
+            "    \"style\":[],\n"
+            "    \"season\":[],\n"
+            "    \"occasion\":[],\n"
+            "    \"confidence\":0\n"
+            "}"
+        )
+        
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inlineData": {
+                                "mimeType": mime_type,
+                                "data": base64_data
+                            }
+                        }
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "responseMimeType": "application/json"
+            }
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(url, json=payload)
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+            response_json = response.json()
+            raw_text = response_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+            
+            if raw_text.startswith("```"):
+                lines = raw_text.split("\n")
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                raw_text = "\n".join(lines).strip()
+            
+            metadata = json.loads(raw_text)
+            return {"success": True, "metadata": metadata}
+    except json.JSONDecodeError as je:
+        raise HTTPException(status_code=520, detail=f"Failed to parse metadata from Gemini response: {str(je)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/stylist")
 async def virtual_stylist(
     file: UploadFile = File(...),

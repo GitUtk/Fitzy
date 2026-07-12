@@ -316,6 +316,53 @@ file: <binary image data>
 
 ---
 
+### Clothing Metadata Extraction
+
+#### `POST /recommendations/extract-metadata`
+
+Processes an uploaded image of a clothing item or user wearing clothing, and uses the Gemini 2.5 Flash model to extract detailed structured metadata about the clothing. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+file: <binary image data>
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true,
+  "metadata": {
+    "category": "Shirts",
+    "subcategory": "Casual Shirts",
+    "primaryColor": "White",
+    "secondaryColor": null,
+    "pattern": "Plain",
+    "material": "Linen",
+    "fit": "Regular",
+    "style": ["Casual", "Summer"],
+    "season": ["Summer", "Spring"],
+    "occasion": ["Beach", "Casual Outing"],
+    "confidence": 0.95
+  }
+}
+```
+
+**Errors**
+
+| Status | Meaning |
+|---|---|
+| 400 | Uploaded file must be an image |
+| 401 | Invalid or missing token |
+| 500 | Gemini API Key not configured or internal processing error |
+| 520 | Failed to parse metadata from Gemini response |
+
+---
+
 ### Virtual Stylist
 
 #### `POST /recommendations/stylist`
@@ -443,11 +490,12 @@ person_url: <optional URL to user photo>
 4. POST /upload/url       → link image url to user profile
 5. POST /recommendations/similar → extract image embedding and search similar outfits
 6. POST /recommendations/analyze → get raw, honest fashion and style feedback from Gemini
-7. POST /recommendations/stylist → get stylist recommendations based on style prompt
-8. POST /recommendations/fetchGradio → register/update the newest Colab Gradio share URL in MongoDB
-9. POST /recommendations/tryon   → generate try-on visualization for recommended garment
-10. GET  /upload/looks     → retrieve history of user looks
-11. GET  /me  (Bearer)     → access profile details
+7. POST /recommendations/extract-metadata → extract detailed structured clothing metadata using Gemini
+8. POST /recommendations/stylist → get stylist recommendations based on style prompt
+9. POST /recommendations/fetchGradio → register/update the newest Colab Gradio share URL in MongoDB
+10. POST /recommendations/tryon   → generate try-on visualization for recommended garment
+11. GET  /upload/looks     → retrieve history of user looks
+12. GET  /me  (Bearer)     → access profile details
 ```
 
 ## Token Details
