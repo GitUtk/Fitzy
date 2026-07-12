@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 export default function Slogan({ textOpacity, textScale, isDark }) {
   return (
     <div 
-      className="relative z-30 w-full flex flex-col items-center justify-center text-center px-6"
+      className="relative z-0 w-full flex flex-col items-center justify-center text-center px-6"
       style={{ marginTop: "130px" }}
     >
       <motion.div

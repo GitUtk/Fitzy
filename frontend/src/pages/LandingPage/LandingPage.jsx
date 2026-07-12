@@ -6,12 +6,14 @@ import {
   useTransform,
   useSpring,
   useMotionValue,
+  useMotionValueEvent,
   animate,
 } from "framer-motion";
 import { MoveRight } from "lucide-react";
 import Header from "./components/Header";
 import Slogan from "./components/Slogan";
 import RevolvingWheel from "./components/RevolvingWheel";
+import Footer from "./components/Footer";
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -26,6 +28,8 @@ function LandingPage() {
     }
     return initialTheme;
   });
+
+  const [showSlogan, setShowSlogan] = useState(true);
 
   // Track page scroll
   const { scrollYProgress } = useScroll({
@@ -53,8 +57,8 @@ function LandingPage() {
     return controls.stop;
   }, [autoRotation]);
 
-  // 2. Scroll-based rotation offset
-  const scrollRotation = useTransform(smoothProgress, [0, 1], [0, 180]);
+  // 2. Scroll-based rotation offset (540 degrees for high-speed dynamic rolling)
+  const scrollRotation = useTransform(smoothProgress, [0, 1], [0, 540]);
 
   // Combined rotation: autoRotation + scrollRotation
   const wheelRotation = useTransform(
@@ -62,13 +66,21 @@ function LandingPage() {
     ([latestAuto, latestScroll]) => latestAuto + latestScroll
   );
   
-  // Pull the wheel up/down slightly as you scroll for dynamic perspective
-  const wheelY = useTransform(smoothProgress, [0, 1], [0, -100]);
+  // Pull the wheel all the way up and out of the viewport (from offset 300px below to -2700px above)
+  const wheelY = useTransform(smoothProgress, [0, 1], [300, -2700]);
 
-  // Fade out slogan text as user scrolls down (using raw scrollYProgress to prevent spring-mount opacity bugs)
-  const textOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
-  const textScale = useTransform(scrollYProgress, [0, 0.4], [1, 0.95]);
-  const scrollIndicatorOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  // Hide slogan immediately the moment the wheel starts entering/rising (from 0 to 0.02 scroll)
+  const textOpacity = useTransform(scrollYProgress, [0, 0.02], [1, 0]);
+  const textScale = useTransform(scrollYProgress, [0, 0.02], [1, 0.92]);
+  const scrollIndicatorOpacity = useTransform(scrollYProgress, [0, 0.01], [1, 0]);
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    if (latest > 0.02) {
+      setShowSlogan(false);
+    } else {
+      setShowSlogan(true);
+    }
+  });
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -88,8 +100,7 @@ function LandingPage() {
 
   return (
     <div
-      ref={containerRef}
-      className={`relative w-full h-[220vh] selection:bg-red-500/20 transition-colors duration-500 ${
+      className={`relative w-full selection:bg-red-500/20 transition-colors duration-500 ${
         isDark ? "text-white" : "text-zinc-900"
       }`}
       style={{ backgroundColor: isDark ? "#000000" : "#FAF8F5" }}
@@ -97,41 +108,54 @@ function LandingPage() {
       {/* ─── Fixed Header Chunk ─── */}
       <Header theme={theme} toggleTheme={toggleTheme} isDark={isDark} />
 
-      {/* ─── Sticky Content Section ─── background must match parent exactly to prevent black band */}
+      {/* ─── Scroll-driven Revolving Wheel Container (600vh) ─── */}
       <div
-        className="sticky top-0 w-full h-screen flex flex-col justify-between overflow-hidden"
-        style={{ backgroundColor: isDark ? "#000000" : "#FAF8F5" }}
+        ref={containerRef}
+        className="relative w-full h-[600vh] overflow-visible"
       >
-        
-        {/* Subtle Background Glows */}
-        <div className={`absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-[150px] pointer-events-none -z-10 transition-colors duration-500 ${
-          isDark ? "bg-red-600/5" : "bg-red-500/10"
-        }`} />
-
-        {/* ─── Headline / Slogan Content Chunk ─── */}
-        <Slogan textOpacity={textOpacity} textScale={textScale} isDark={isDark} />
-
-        {/* Scroll Indicator */}
-        <motion.div
-          style={{ opacity: scrollIndicatorOpacity }}
-          className="absolute bottom-48 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-500 pointer-events-none z-20"
+        {/* Sticky Content Section */}
+        <div
+          className="sticky top-0 w-full h-screen flex flex-col justify-between overflow-hidden"
+          style={{ backgroundColor: isDark ? "#000000" : "#FAF8F5" }}
         >
-          <span className={`text-[10px] uppercase tracking-[0.25em] font-semibold transition-colors duration-500 ${
-            isDark ? "text-zinc-400" : "text-zinc-600"
-          }`}>
-            Scroll to revolve wheel
-          </span>
-          <motion.div
-            animate={{ x: [0, 6, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-          >
-            <MoveRight className="h-4 w-4" />
-          </motion.div>
-        </motion.div>
+          {/* Subtle Background Glows */}
+          <div className={`absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-[150px] pointer-events-none -z-10 transition-colors duration-500 ${
+            isDark ? "bg-red-600/5" : "bg-red-500/10"
+          }`} />
 
-        {/* ─── Giant 360-Degree Revolving Wheel Chunk ─── */}
-        <RevolvingWheel wheelRotation={wheelRotation} wheelY={wheelY} isDark={isDark} />
+          {/* ─── Headline / Slogan Content Chunk ─── */}
+          {showSlogan && <Slogan textOpacity={textOpacity} textScale={textScale} isDark={isDark} />}
+
+          {/* Scroll Indicator */}
+          <motion.div
+            style={{ opacity: scrollIndicatorOpacity }}
+            className="absolute bottom-48 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-500 pointer-events-none z-20"
+          >
+            <span className={`text-[10px] uppercase tracking-[0.25em] font-semibold transition-colors duration-500 ${
+              isDark ? "text-zinc-400" : "text-zinc-600"
+            }`}>
+              Scroll to revolve wheel
+            </span>
+            <motion.div
+              animate={{ x: [0, 6, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+            >
+              <MoveRight className="h-4 w-4" />
+            </motion.div>
+          </motion.div>
+
+          {/* ─── Giant 360-Degree Revolving Wheel Chunk ─── */}
+          <RevolvingWheel
+            wheelRotation={wheelRotation}
+            wheelY={wheelY}
+            scrollYProgress={smoothProgress}
+            isDark={isDark}
+          />
+        </div>
       </div>
+
+      {/* ─── Footer Section ─── */}
+      <Footer isDark={isDark} />
     </div>
   );
 }
