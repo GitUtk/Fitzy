@@ -78,8 +78,10 @@ function Sidebar({ handleLogout }) {
               key={item.path}
               variant={isActive ? "secondary" : "ghost"}
               className={
-                `w-full justify-start gap-3 h-10 px-3 font-normal ` +
-                (isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "")
+                `w-full justify-start gap-3 h-10 px-3 font-normal transition-all duration-200 ` +
+                (isActive 
+                  ? "bg-red-500/10 text-red-600 dark:text-red-400 font-semibold border-l-2 border-red-500 rounded-l-none" 
+                  : "hover:text-red-500 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-400")
               }
               onClick={() => navigate(item.path)}
             >

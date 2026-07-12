@@ -97,7 +97,7 @@ export function DashboardHome() {
       <Card className="bg-card shadow-none border-0">
         <CardContent className="flex flex-col gap-4 p-0 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
-            <h3 className="font-display text-2xl font-semibold tracking-tight">
+            <h3 className="font-display text-2xl font-extrabold tracking-tight text-red-600 dark:text-red-500">
               Welcome, {userFirstName}
             </h3>
             <p className="text-sm text-muted-foreground">

@@ -348,7 +348,7 @@ const UploadSection = ({ onUploadSuccess }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Virtual Try-On</CardTitle>
+        <CardTitle className="text-2xl font-extrabold text-red-600 dark:text-red-500">Virtual Try-On</CardTitle>
         <CardDescription>
           Upload your photo, describe the outfit you want, and preview clothing options instantly.
         </CardDescription>
@@ -500,7 +500,7 @@ const UploadSection = ({ onUploadSuccess }) => {
           <Card className="shadow-none border border-border bg-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold">Clothing Options</CardTitle>
+                <CardTitle className="text-base font-extrabold text-red-600 dark:text-red-500">Clothing Options</CardTitle>
                 <span className="text-xs text-muted-foreground">Click "Try On" to preview style directly on your photo</span>
               </div>
             </CardHeader>

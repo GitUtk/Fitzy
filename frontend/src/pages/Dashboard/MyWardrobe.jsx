@@ -154,7 +154,7 @@ function MyWardrobe() {
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-semibold tracking-tight">My Wardrobe</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-red-600 dark:text-red-500">My Wardrobe</h2>
           <p className="text-muted-foreground mt-1">
             {items.length} item{items.length !== 1 ? "s" : ""} saved · Upload clothes to get AI outfit suggestions
           </p>

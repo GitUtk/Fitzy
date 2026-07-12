@@ -92,25 +92,25 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40 flex items-center justify-center px-4">
-      <Card className="w-full max-w-md shadow-lg border border-border">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#000000] flex items-center justify-center px-4 transition-colors duration-500">
+      <Card className="w-full max-w-md shadow-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-display font-bold">Welcome Back</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-3xl font-display font-extrabold text-red-600 dark:text-red-500">Welcome Back</CardTitle>
+          <CardDescription className="text-zinc-500 dark:text-zinc-400">
             Log in to your Fitzy account to continue styling
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {apiError && (
-              <Alert variant="destructive" className="py-2.5">
+              <Alert variant="destructive" className="py-2.5 bg-red-500/10 text-red-500 border-red-500/20">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{apiError}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-zinc-700 dark:text-zinc-300">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -122,17 +122,19 @@ function Login() {
                     email: e.target.value,
                   })
                 }
-                className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={`bg-transparent text-zinc-950 dark:text-white border-zinc-200 dark:border-zinc-800 focus-visible:ring-red-500 ${
+                  errors.email ? "border-red-500 focus-visible:ring-red-500 animate-shake" : ""
+                }`}
               />
               {errors.email && (
-                <p className="text-destructive text-xs font-medium mt-1">
+                <p className="text-red-500 text-xs font-medium mt-1">
                   {errors.email}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-zinc-700 dark:text-zinc-300">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -144,10 +146,12 @@ function Login() {
                     password: e.target.value,
                   })
                 }
-                className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={`bg-transparent text-zinc-950 dark:text-white border-zinc-200 dark:border-zinc-800 focus-visible:ring-red-500 ${
+                  errors.password ? "border-red-500 focus-visible:ring-red-500 animate-shake" : ""
+                }`}
               />
               {errors.password && (
-                <p className="text-destructive text-xs font-medium mt-1">
+                <p className="text-red-500 text-xs font-medium mt-1">
                   {errors.password}
                 </p>
               )}
@@ -162,11 +166,11 @@ function Login() {
               {loading ? "Logging In..." : "Log In"}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground mt-4">
+            <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 mt-4">
               Don't have an account?{" "}
               <Link
                 to="/register"
-                className="text-primary hover:underline font-semibold"
+                className="text-red-500 hover:text-red-600 hover:underline font-semibold"
               >
                 Sign Up
               </Link>

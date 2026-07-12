@@ -128,7 +128,7 @@ function RecentLooks({
     return (
       <section className="space-y-6">
         <div>
-          <h2 className="font-display text-2xl font-semibold tracking-tight">{title}</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-red-600 dark:text-red-500">{title}</h2>
           <p className="text-muted-foreground mt-1">{subtitle}</p>
         </div>
 
@@ -154,7 +154,7 @@ function RecentLooks({
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-semibold tracking-tight">{title}</h2>
+        <h2 className="font-display text-2xl font-extrabold tracking-tight text-red-600 dark:text-red-500">{title}</h2>
         <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 

@@ -127,25 +127,25 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40 flex items-center justify-center px-4 py-10">
-      <Card className="w-full max-w-md shadow-lg border border-border">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#000000] flex items-center justify-center px-4 py-10 transition-colors duration-500">
+      <Card className="w-full max-w-md shadow-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-display font-bold">Create Account</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-3xl font-display font-extrabold text-red-600 dark:text-red-500">Create Account</CardTitle>
+          <CardDescription className="text-zinc-500 dark:text-zinc-400">
             Start your AI styling journey with Fitzy today
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {apiError && (
-              <Alert variant="destructive" className="py-2.5">
+              <Alert variant="destructive" className="py-2.5 bg-red-500/10 text-red-500 border-red-500/20">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{apiError}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName" className="text-zinc-700 dark:text-zinc-300">Full Name</Label>
               <Input
                 id="fullName"
                 type="text"
@@ -157,17 +157,19 @@ function Register() {
                     fullName: e.target.value,
                   })
                 }
-                className={errors.fullName ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={`bg-transparent text-zinc-950 dark:text-white border-zinc-200 dark:border-zinc-800 focus-visible:ring-red-500 ${
+                  errors.fullName ? "border-red-500 focus-visible:ring-red-500 animate-shake" : ""
+                }`}
               />
               {errors.fullName && (
-                <p className="text-destructive text-xs font-medium mt-1">
+                <p className="text-red-500 text-xs font-medium mt-1">
                   {errors.fullName}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-zinc-700 dark:text-zinc-300">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -179,17 +181,19 @@ function Register() {
                     email: e.target.value,
                   })
                 }
-                className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={`bg-transparent text-zinc-950 dark:text-white border-zinc-200 dark:border-zinc-800 focus-visible:ring-red-500 ${
+                  errors.email ? "border-red-500 focus-visible:ring-red-500 animate-shake" : ""
+                }`}
               />
               {errors.email && (
-                <p className="text-destructive text-xs font-medium mt-1">
+                <p className="text-red-500 text-xs font-medium mt-1">
                   {errors.email}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
+              <Label htmlFor="gender" className="text-zinc-700 dark:text-zinc-300">Gender</Label>
               <select
                 id="gender"
                 value={formData.gender}
@@ -199,24 +203,26 @@ function Register() {
                     gender: e.target.value,
                   })
                 }
-                className={`h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  errors.gender ? "border-destructive focus-visible:ring-destructive" : ""
+                className={`h-10 w-full rounded-md border bg-transparent text-zinc-950 dark:text-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
+                  errors.gender
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : "border-zinc-200 dark:border-zinc-800"
                 }`}
               >
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="" className="bg-white dark:bg-zinc-950">Select Gender</option>
+                <option value="Male" className="bg-white dark:bg-zinc-950">Male</option>
+                <option value="Female" className="bg-white dark:bg-zinc-950">Female</option>
+                <option value="Other" className="bg-white dark:bg-zinc-950">Other</option>
               </select>
               {errors.gender && (
-                <p className="text-destructive text-xs font-medium mt-1">
+                <p className="text-red-500 text-xs font-medium mt-1">
                   {errors.gender}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-zinc-700 dark:text-zinc-300">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -228,17 +234,19 @@ function Register() {
                     password: e.target.value,
                   })
                 }
-                className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={`bg-transparent text-zinc-950 dark:text-white border-zinc-200 dark:border-zinc-800 focus-visible:ring-red-500 ${
+                  errors.password ? "border-red-500 focus-visible:ring-red-500 animate-shake" : ""
+                }`}
               />
               {errors.password && (
-                <p className="text-destructive text-xs font-medium mt-1">
+                <p className="text-red-500 text-xs font-medium mt-1">
                   {errors.password}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-zinc-700 dark:text-zinc-300">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -250,10 +258,12 @@ function Register() {
                     confirmPassword: e.target.value,
                   })
                 }
-                className={errors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={`bg-transparent text-zinc-950 dark:text-white border-zinc-200 dark:border-zinc-800 focus-visible:ring-red-500 ${
+                  errors.confirmPassword ? "border-red-500 focus-visible:ring-red-500 animate-shake" : ""
+                }`}
               />
               {errors.confirmPassword && (
-                <p className="text-destructive text-xs font-medium mt-1">
+                <p className="text-red-500 text-xs font-medium mt-1">
                   {errors.confirmPassword}
                 </p>
               )}
@@ -268,11 +278,11 @@ function Register() {
               {loading ? "Registering..." : "Sign Up"}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground mt-4">
+            <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 mt-4">
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="text-primary hover:underline font-semibold"
+                className="text-red-500 hover:text-red-600 hover:underline font-semibold"
               >
                 Log In
               </Link>

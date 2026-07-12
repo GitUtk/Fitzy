@@ -1467,7 +1467,7 @@ function Profile({ isSetupMode = false }) {
           <CardHeader className="space-y-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Profile Settings</p>
-              <CardTitle className="text-3xl font-bold tracking-tight">
+              <CardTitle className="text-3xl font-extrabold tracking-tight text-red-600 dark:text-red-500">
                 {loading ? (
                   <Skeleton className="h-9 w-64 mt-1" />
                 ) : (
@@ -1540,7 +1540,7 @@ function Profile({ isSetupMode = false }) {
           {activeTab === "personal" && (
             <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold">Personal Details</CardTitle>
+                <CardTitle className="text-xl font-extrabold text-red-600 dark:text-red-500">Personal Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-2">
@@ -1610,7 +1610,7 @@ function Profile({ isSetupMode = false }) {
           {activeTab === "body" && (
             <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold">Body Details & Sizes</CardTitle>
+                <CardTitle className="text-xl font-extrabold text-red-600 dark:text-red-500">Body Details & Sizes</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-2">
@@ -1732,7 +1732,7 @@ function Profile({ isSetupMode = false }) {
             <div className="space-y-6">
               <Card className="border-border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold">Style Preferences</CardTitle>
+                  <CardTitle className="text-xl font-extrabold text-red-600 dark:text-red-500">Style Preferences</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
@@ -1763,7 +1763,7 @@ function Profile({ isSetupMode = false }) {
 
               <Card className="border-border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold">Favourite Colours</CardTitle>
+                  <CardTitle className="text-xl font-extrabold text-red-600 dark:text-red-500">Favourite Colours</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
@@ -1794,7 +1794,7 @@ function Profile({ isSetupMode = false }) {
 
               <Card className="border-border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold">Budget Details</CardTitle>
+                  <CardTitle className="text-xl font-extrabold text-red-600 dark:text-red-500">Budget Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
