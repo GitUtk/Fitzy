@@ -112,14 +112,6 @@ export default function Footer({ isDark }) {
         {/* Right Side: Links */}
         <div className="flex items-center gap-8 font-semibold">
           <a
-            href="https://github.com/GitUtk/Fitzy/blob/main/backend/API_DOCS.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`hover:text-red-500 transition-colors ${isDark ? "text-zinc-400" : "text-zinc-600"}`}
-          >
-            API Docs
-          </a>
-          <a
             href="https://github.com/GitUtk/Fitzy/"
             target="_blank"
             rel="noopener noreferrer"
