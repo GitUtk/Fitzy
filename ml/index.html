@@ -932,6 +932,15 @@
                 </div>
             </div>
 
+            <!-- Gender Selector -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                <label for="gender-select" style="font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">Catalog Target</label>
+                <select id="gender-select" style="height: 40px; padding: 0.5rem; font-family: var(--font-body); font-weight: 700; font-size: 0.95rem; border: var(--border-width) solid var(--border-color); border-radius: 4px; box-shadow: 2px 2px 0px var(--border-color); background: #FFFFFF; cursor: pointer; outline: none;">
+                    <option value="Male">Men's Outfits</option>
+                    <option value="Female">Women's Outfits</option>
+                </select>
+            </div>
+
             <button class="brutal-btn" id="btn-search" disabled>
                 <i data-lucide="search" style="width: 18px; height: 18px; stroke-width: 2.5;"></i>
                 <span>EXTRACT & MATCH</span>
@@ -1048,6 +1057,7 @@
         const removePreviewBtn = document.getElementById('remove-preview-btn');
         const scanLine = document.getElementById('scan-line');
         const btnSearch = document.getElementById('btn-search');
+        const genderSelect = document.getElementById('gender-select');
         
         const placeholderResults = document.getElementById('placeholder-results');
         const loadingGrid = document.getElementById('loading-grid');
@@ -1145,9 +1155,10 @@
 
             const formData = new FormData();
             formData.append('file', selectedFile);
+            const genderVal = genderSelect.value;
 
             try {
-                const response = await fetch('/search', {
+                const response = await fetch(`/search?gender=${genderVal}`, {
                     method: 'POST',
                     body: formData
                 });

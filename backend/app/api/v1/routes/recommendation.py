@@ -21,7 +21,8 @@ async def get_similar_outfits(
         raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
     try:
         file_bytes = await file.read()
-        results = recommendation_service.find_similar(file_bytes)
+        gender = current_user.get("gender", "Male")
+        results = recommendation_service.find_similar(file_bytes, gender=gender)
         return {"success": True, "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -173,17 +174,25 @@ async def virtual_stylist(
         mime_type = file.content_type
         user_image_url = f"data:{mime_type};base64,{base64_data}"
         
+        gender = current_user.get("gender", "Male")
+        is_female = str(gender).lower() == "female"
+        
+        if is_female:
+            allowed_categories = "'Dresses', 'Tops', 'Bottoms'"
+        else:
+            allowed_categories = "'Shirts', 'T-Shirts | POLO', 'Jeans', 'Trousers', 'Cargo pants', 'Joggers', 'SHORTS', 'Overshirts'"
+        
         gemini_prompt = (
             f"You are a professional fashion stylist. Analyze the user's appearance in the image and their requested style prompt: '{prompt}'. "
-            "Suggest a coordinated outfit consisting of 1-3 items (e.g. a top, a bottom, footwear) from these specific categories: 'Shirts', 'T-Shirts | POLO', 'Jeans', 'Trousers', 'Footwear'. "
+            f"Suggest a coordinated outfit consisting of 1-3 items from these specific categories: {allowed_categories}. "
             "Return a JSON object with the following structure. Do not include markdown formatting like ```json or ``` in the output, return ONLY the raw JSON string:\n"
             "{\n"
             "  \"critique\": \"Your professional critique of their current outfit and how it relates to their request.\",\n"
             "  \"advice\": \"General advice on how they can pull off this style.\",\n"
             "  \"recommendations\": [\n"
             "    {\n"
-            "      \"category\": \"Shirts\",\n"
-            "      \"search_query\": \"keywords to search in a fashion catalog (e.g., 'White Linen Shirt')\",\n"
+            "      \"category\": \"category name suggested from the allowed categories list\",\n"
+            "      \"search_query\": \"keywords to search in a fashion catalog (e.g., 'White Linen Shirt' or 'Floral Mini Dress')\",\n"
             "      \"reason\": \"Why this item is recommended.\"\n"
             "    }\n"
             "  ]\n"
@@ -228,7 +237,7 @@ async def virtual_stylist(
             for rec in stylist_data.get("recommendations", []):
                 category = rec.get("category")
                 query = rec.get("search_query")
-                matched_products = recommendation_service.search_products(query, category, limit=3)
+                matched_products = recommendation_service.search_products(query, category, gender=gender, limit=3)
                 final_recommendations.append({
                     "category": category,
                     "reason": rec.get("reason"),

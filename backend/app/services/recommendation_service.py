@@ -7,8 +7,14 @@ from PIL import Image
 
 class RecommendationService:
     def __init__(self):
-        self.df_labels = None
-        self.db_embeddings_norm = None
+        # Male dataset
+        self.df_labels_male = None
+        self.db_embeddings_norm_male = None
+        
+        # Female dataset
+        self.df_labels_female = None
+        self.db_embeddings_norm_female = None
+        
         self.ort_session = None
         self.initialized = False
 
@@ -23,24 +29,41 @@ class RecommendationService:
         backend_dir = os.path.dirname(app_dir)
         repo_root = os.path.dirname(backend_dir)
 
-        csv_path = os.path.join(repo_root, "frontend", "public", "static", "labels.csv")
-        embeddings_path = os.path.join(repo_root, "frontend", "public", "static", "embeddings.npy")
+        # Men's files
+        csv_path_male = os.path.join(repo_root, "frontend", "public", "static", "labels.csv")
+        embeddings_path_male = os.path.join(repo_root, "frontend", "public", "static", "embeddings.npy")
+        
+        # Women's files
+        csv_path_female = os.path.join(repo_root, "frontend", "public", "static", "lfemalesabels.csv")
+        embeddings_path_female = os.path.join(repo_root, "frontend", "public", "static", "feamalesembedding.npy")
+        
         onnx_path = os.path.join(services_dir, "resnet50_features.onnx")
 
-        if not os.path.exists(csv_path):
-            raise RuntimeError(f"Metadata file not found at {csv_path}")
-        if not os.path.exists(embeddings_path):
-            raise RuntimeError(f"Embeddings file not found at {embeddings_path}")
+        # Validate existence
+        if not os.path.exists(csv_path_male):
+            raise RuntimeError(f"Men's metadata file not found at {csv_path_male}")
+        if not os.path.exists(embeddings_path_male):
+            raise RuntimeError(f"Men's embeddings file not found at {embeddings_path_male}")
+        if not os.path.exists(csv_path_female):
+            raise RuntimeError(f"Women's metadata file not found at {csv_path_female}")
+        if not os.path.exists(embeddings_path_female):
+            raise RuntimeError(f"Women's embeddings file not found at {embeddings_path_female}")
         if not os.path.exists(onnx_path):
             raise RuntimeError(f"ONNX model file not found at {onnx_path}")
 
-        self.df_labels = pd.read_csv(csv_path).fillna("")
-        db_embeddings = np.load(embeddings_path)
+        # Load Men's dataset
+        self.df_labels_male = pd.read_csv(csv_path_male).fillna("")
+        db_embeddings_male = np.load(embeddings_path_male)
+        norms_male = np.linalg.norm(db_embeddings_male, axis=1, keepdims=True)
+        norms_male = np.where(norms_male == 0, 1e-10, norms_male)
+        self.db_embeddings_norm_male = db_embeddings_male / norms_male
 
-        # Normalize precomputed embeddings
-        norms = np.linalg.norm(db_embeddings, axis=1, keepdims=True)
-        norms = np.where(norms == 0, 1e-10, norms)
-        self.db_embeddings_norm = db_embeddings / norms
+        # Load Women's dataset
+        self.df_labels_female = pd.read_csv(csv_path_female).fillna("")
+        db_embeddings_female = np.load(embeddings_path_female)
+        norms_female = np.linalg.norm(db_embeddings_female, axis=1, keepdims=True)
+        norms_female = np.where(norms_female == 0, 1e-10, norms_female)
+        self.db_embeddings_norm_female = db_embeddings_female / norms_female
 
         # Initialize CPU-optimized ONNX runtime session with single thread to minimize RAM usage
         sess_options = ort.SessionOptions()
@@ -83,7 +106,7 @@ class RecommendationService:
         img_data = np.expand_dims(img_data, axis=0)
         return img_data
 
-    def find_similar(self, file_bytes: bytes, top_k: int = 6):
+    def find_similar(self, file_bytes: bytes, gender: str = None, top_k: int = 6):
         self.initialize()
 
         image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
@@ -101,12 +124,18 @@ class RecommendationService:
             query_norm = 1e-10
         query_embedding_norm = query_embedding / query_norm
 
-        similarities = np.dot(self.db_embeddings_norm, query_embedding_norm)
+        # Select dataset based on gender
+        is_female = gender and str(gender).lower() == "female"
+        df_labels = self.df_labels_female if is_female else self.df_labels_male
+        db_embeddings_norm = self.db_embeddings_norm_female if is_female else self.db_embeddings_norm_male
+        default_url = "https://newme.asia/" if is_female else "https://www.snitch.com/"
+
+        similarities = np.dot(db_embeddings_norm, query_embedding_norm)
         top_k_indices = np.argsort(similarities)[::-1][:top_k]
 
         results = []
         for idx in top_k_indices:
-            row = self.df_labels.iloc[idx]
+            row = df_labels.iloc[idx]
             similarity_score = float(similarities[idx])
 
             results.append({
@@ -123,20 +152,26 @@ class RecommendationService:
                 "rating": float(row["rating"]) if row["rating"] != "" else None,
                 "category": row["category"],
                 "wear_type": row.get("wear_type", ""),
-                "product_url": row.get("product_url", "https://www.snitch.com/"),
+                "product_url": row.get("product_url", default_url),
                 "similarity": similarity_score
             })
         return results
 
-    def search_products(self, query: str, category: str = None, limit: int = 5) -> list:
+    def search_products(self, query: str, category: str = None, gender: str = None, limit: int = 5) -> list:
         self.initialize()
-        df = self.df_labels.copy()
+        
+        is_female = gender and str(gender).lower() == "female"
+        df_labels = self.df_labels_female if is_female else self.df_labels_male
+        default_url = "https://newme.asia/" if is_female else "https://www.snitch.com/"
+        
+        df = df_labels.copy()
         if category:
             category_lower = category.lower()
             if "t-shirt" in category_lower or "polo" in category_lower:
                 df = df[df["category"].str.lower().str.contains("t-shirt|polo", na=False)]
             else:
                 df = df[df["category"].str.lower().str.contains(category_lower, na=False)]
+        
         keywords = [kw.lower() for kw in query.split() if len(kw) > 1]
         scores = []
         for idx, row in df.iterrows():
@@ -146,11 +181,12 @@ class RecommendationService:
                 if kw in text_to_search:
                     score += 1
             scores.append((score, idx))
+        
         scores.sort(key=lambda x: x[0], reverse=True)
         top_indices = [idx for score, idx in scores[:limit]]
         results = []
         for idx in top_indices:
-            row = self.df_labels.iloc[idx]
+            row = df_labels.iloc[idx]
             results.append({
                 "image": row["image"],
                 "image_url": f"/static/images/{row['image']}",
@@ -164,7 +200,7 @@ class RecommendationService:
                 "rating": float(row["rating"]) if row["rating"] != "" else None,
                 "category": row["category"],
                 "wear_type": row.get("wear_type", ""),
-                "product_url": row.get("product_url", "https://www.snitch.com/")
+                "product_url": row.get("product_url", default_url)
             })
         return results
 
