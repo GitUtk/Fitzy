@@ -2,29 +2,29 @@ import { motion, useTransform } from "framer-motion";
 
 const IMAGES = [
   { src: "/static/images/00000.webp", label: "Studio Look 01" },
-  { src: "/static/images/00001.webp", label: "Studio Look 02" },
-  { src: "/static/images/00002.webp", label: "Studio Look 03" },
-  { src: "/static/images/00003.webp", label: "Studio Look 04" },
-  { src: "/static/images/00004.webp", label: "Studio Look 05" },
-  { src: "/static/images/00005.webp", label: "Studio Look 06" },
-  { src: "/static/images/00006.webp", label: "Studio Look 07" },
-  { src: "/static/images/00007.webp", label: "Studio Look 08" },
-  { src: "/static/images/00008.webp", label: "Studio Look 09" },
-  { src: "/static/images/00009.webp", label: "Studio Look 10" },
-  { src: "/static/images/00010.webp", label: "Studio Look 11" },
-  { src: "/static/images/00011.webp", label: "Studio Look 12" },
-  { src: "/static/images/00012.webp", label: "Studio Look 13" },
-  { src: "/static/images/00013.webp", label: "Studio Look 14" },
-  { src: "/static/images/00014.webp", label: "Studio Look 15" },
-  { src: "/static/images/00015.webp", label: "Studio Look 16" },
-  { src: "/static/images/00016.webp", label: "Studio Look 17" },
-  { src: "/static/images/00017.webp", label: "Studio Look 18" },
-  { src: "/static/images/00018.webp", label: "Studio Look 19" },
-  { src: "/static/images/00019.webp", label: "Studio Look 20" },
-  { src: "/static/images/00020.webp", label: "Studio Look 21" },
-  { src: "/static/images/00021.webp", label: "Studio Look 22" },
-  { src: "/static/images/00022.webp", label: "Studio Look 23" },
-  { src: "/static/images/00023.webp", label: "Studio Look 24" },
+  { src: "/static/images/female_00000.webp", label: "Studio Look 02" },
+  { src: "/static/images/00001.webp", label: "Studio Look 03" },
+  { src: "/static/images/female_00001.webp", label: "Studio Look 04" },
+  { src: "/static/images/00002.webp", label: "Studio Look 05" },
+  { src: "/static/images/female_00002.webp", label: "Studio Look 06" },
+  { src: "/static/images/00003.webp", label: "Studio Look 07" },
+  { src: "/static/images/female_00003.webp", label: "Studio Look 08" },
+  { src: "/static/images/00004.webp", label: "Studio Look 09" },
+  { src: "/static/images/female_00004.webp", label: "Studio Look 10" },
+  { src: "/static/images/00005.webp", label: "Studio Look 11" },
+  { src: "/static/images/female_00005.webp", label: "Studio Look 12" },
+  { src: "/static/images/00006.webp", label: "Studio Look 13" },
+  { src: "/static/images/female_00006.webp", label: "Studio Look 14" },
+  { src: "/static/images/00007.webp", label: "Studio Look 15" },
+  { src: "/static/images/female_00007.webp", label: "Studio Look 16" },
+  { src: "/static/images/00008.webp", label: "Studio Look 17" },
+  { src: "/static/images/female_00008.webp", label: "Studio Look 18" },
+  { src: "/static/images/00009.webp", label: "Studio Look 19" },
+  { src: "/static/images/female_00009.webp", label: "Studio Look 20" },
+  { src: "/static/images/00010.webp", label: "Studio Look 21" },
+  { src: "/static/images/female_00010.webp", label: "Studio Look 22" },
+  { src: "/static/images/00011.webp", label: "Studio Look 23" },
+  { src: "/static/images/female_00011.webp", label: "Studio Look 24" },
 ];
 
 export default function RevolvingWheel({ wheelRotation, wheelY, scrollYProgress, isDark }) {
@@ -37,6 +37,9 @@ export default function RevolvingWheel({ wheelRotation, wheelY, scrollYProgress,
 
   // Flowing dash offset along the line to show data/outfit loading direction
   const dashOffset = useTransform(scrollYProgress, [0, 1], [1000, 0]);
+
+  // Fade out wheel as it reaches the end of the scroll container to prevent overlapping the header/footer
+  const wheelOpacity = useTransform(scrollYProgress, [0, 0.8, 0.95, 1], [1, 1, 0, 0]);
 
   return (
     <div 
@@ -92,7 +95,7 @@ export default function RevolvingWheel({ wheelRotation, wheelY, scrollYProgress,
         </svg>
       </div>
 
-      {/* ─── Brand Name "SNITCH" in the center of the circle ─── */}
+      {/* ─── Brand Logos in the center of the circle ─── */}
       <motion.div
         style={{
           position: "absolute",
@@ -100,27 +103,24 @@ export default function RevolvingWheel({ wheelRotation, wheelY, scrollYProgress,
           y: wheelY,
           opacity: brandOpacity,
         }}
-        className="flex flex-col items-center justify-center z-0 pointer-events-none"
+        className="flex flex-col items-center justify-center z-0 pointer-events-none gap-4 py-6"
       >
+        <img
+          src={isDark ? "/snitch-logo-light.png" : "/snitch-logo-dark.png"}
+          alt="Snitch"
+          className="h-64 md:h-[240px] w-auto object-contain select-none pointer-events-none transition-all duration-500"
+        />
+        <img
+          src="/newmelight.png"
+          alt="Newme"
+          className="h-28 md:h-36 w-auto object-contain select-none pointer-events-none transition-all duration-500"
+        />
         <span
-          className={`font-black uppercase tracking-[0.25em] select-none text-[8vw] md:text-[110px] transition-colors duration-500 ${
-            isDark ? "text-white" : "text-zinc-950"
-          }`}
-          style={{
-            lineHeight: 1,
-            textShadow: isDark
-              ? "0 0 50px rgba(255, 255, 255, 0.15)"
-              : "0 0 50px rgba(0, 0, 0, 0.05)",
-          }}
-        >
-          SNITCH
-        </span>
-        <span
-          className={`text-[10px] md:text-[11px] font-bold tracking-[0.4em] uppercase mt-4 transition-colors duration-500 ${
+          className={`text-[10px] md:text-[11px] font-bold tracking-[0.4em] uppercase mt-2 transition-colors duration-500 ${
             isDark ? "text-zinc-500/80" : "text-zinc-400/80"
           }`}
         >
-          Partner Catalog
+          Partner Catalogs
         </span>
       </motion.div>
 
@@ -133,6 +133,7 @@ export default function RevolvingWheel({ wheelRotation, wheelY, scrollYProgress,
           height: "1800px",
           rotate: wheelRotation,
           y: wheelY,
+          opacity: wheelOpacity,
           transformOrigin: "center 900px",
         }}
         className="rounded-full flex justify-center pointer-events-auto"

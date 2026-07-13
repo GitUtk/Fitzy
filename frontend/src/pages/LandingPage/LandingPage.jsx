@@ -66,8 +66,8 @@ function LandingPage() {
     ([latestAuto, latestScroll]) => latestAuto + latestScroll
   );
   
-  // Pull the wheel all the way up and out of the viewport (from offset 300px below to -2700px above)
-  const wheelY = useTransform(smoothProgress, [0, 1], [300, -2700]);
+  // Pull the wheel all the way up and out of the viewport (from offset -120px below to -2300px above)
+  const wheelY = useTransform(smoothProgress, [0, 1], [-120, -2300]);
 
   // Hide slogan immediately the moment the wheel starts entering/rising (from 0 to 0.02 scroll)
   const textOpacity = useTransform(scrollYProgress, [0, 0.02], [1, 0]);
