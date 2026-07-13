@@ -174,6 +174,7 @@ import SimilarProducts from "./SimilarProducts";
 import Sidebar from "../Dashboard/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import GenderModal from "../components/GenderModal";
 
 function StyleStudio() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -186,6 +187,8 @@ function StyleStudio() {
 
   const [analysisError, setAnalysisError] = useState("");
   const [productsError, setProductsError] = useState("");
+  const [userGender, setUserGender] = useState("");
+  const [showGenderModal, setShowGenderModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -193,8 +196,48 @@ function StyleStudio() {
     localStorage.removeItem("token");
     navigate("/login");
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const checkUserGender = async () => {
+      try {
+        const response = await fetch("https://fitzy-f7uv.onrender.com/api/v1/me", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const gender = data.gender || "";
+          setUserGender(gender);
+          if (!gender || (gender !== "Male" && gender !== "Female")) {
+            setShowGenderModal(true);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking user gender:", err);
+      }
+    };
+
+    checkUserGender();
+  }, [navigate]);
+
+  const handleGenderSuccess = (gender) => {
+    setUserGender(gender);
+    setShowGenderModal(false);
+  };
+
   useEffect(() => {
   if (!selectedFile) return;
+  if (!userGender || (userGender !== "Male" && userGender !== "Female")) {
+    setShowGenderModal(true);
+    return;
+  }
 
   const processImage = async () => {
     setLoadingAnalysis(true);
@@ -289,6 +332,7 @@ try {
   return (
     <div className="h-screen bg-background overflow-hidden">
       <Sidebar handleLogout={handleLogout} />
+      <GenderModal isOpen={showGenderModal} onSuccess={handleGenderSuccess} />
 
       <main className="lg:ml-[260px] h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">

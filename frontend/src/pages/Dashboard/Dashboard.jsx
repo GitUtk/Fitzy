@@ -6,6 +6,7 @@ import RecentLooks from "./RecentLooks";
 import Profile from "../Profile/Profile";
 import MyWardrobe from "./MyWardrobe";
 import { Card, CardContent } from "@/components/ui/card";
+import GenderModal from "../components/GenderModal";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
@@ -14,6 +15,8 @@ function Dashboard() {
   const [looks, setLooks] = useState([]);
   const [loadingLooks, setLoadingLooks] = useState(false);
   const [userFirstName, setUserFirstName] = useState("there");
+  const [userGender, setUserGender] = useState("");
+  const [showGenderModal, setShowGenderModal] = useState(false);
 
   const fetchLooks = async () => {
     const token = localStorage.getItem("token");
@@ -53,6 +56,12 @@ function Dashboard() {
             const data = await response.json();
             const firstName = (data.fullName || "").trim().split(/\s+/)[0];
             setUserFirstName(firstName || "there");
+            
+            const gender = data.gender || "";
+            setUserGender(gender);
+            if (!gender || (gender !== "Male" && gender !== "Female")) {
+              setShowGenderModal(true);
+            }
           } else {
             setUserFirstName("there");
           }
@@ -69,9 +78,15 @@ function Dashboard() {
     navigate("/login");
   };
 
+  const handleGenderSuccess = (gender) => {
+    setUserGender(gender);
+    setShowGenderModal(false);
+  };
+
   return (
     <div className="h-screen bg-background overflow-hidden">
       <Sidebar handleLogout={handleLogout} />
+      <GenderModal isOpen={showGenderModal} onSuccess={handleGenderSuccess} />
 
       <main className="lg:ml-[260px] h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -81,6 +96,7 @@ function Dashboard() {
               loadingLooks,
               fetchLooks,
               userFirstName,
+              userGender,
             }}
           />
         </div>
