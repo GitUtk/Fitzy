@@ -121,7 +121,7 @@ const UploadSection = ({ onUploadSuccess }) => {
       const photoFile = fileInputRef.current?.files?.[0];
       const formData = new FormData();
       formData.append("garment_url", productToTry.image_url || productToTry.image || productToTry.product_url || "");
-      formData.append("category", inferCategory(productToTry.category));
+      formData.append("category", inferCategory(productToTry?.category));
       if (photoFile) {
         formData.append("file", photoFile);
       }
@@ -325,14 +325,16 @@ const UploadSection = ({ onUploadSuccess }) => {
       }
 
       const results = Array.isArray(data?.recommendations)
-        ? data.recommendations.flatMap((group) => group.products || [])
+        ? data.recommendations.flatMap((group) => group?.products || [])
         : Array.isArray(data?.results)
           ? data.results
           : [];
 
-      setRecommendations(results);
+      const normalizedResults = results.filter(Boolean);
+
+      setRecommendations(normalizedResults);
       setAnalysis(data?.critique || data?.analysis || "Style suggestions are ready for you to preview.");
-      setSelectedProduct(results[0] || null);
+      setSelectedProduct(normalizedResults[0] || null);
     } catch (err) {
       console.error(err);
       setError(err.message || "Something went wrong while generating outfit ideas.");
@@ -505,15 +507,15 @@ const UploadSection = ({ onUploadSuccess }) => {
               </div>
             </CardHeader>
             <CardContent className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-              {recommendations.map((item, index) => {
-                const imageUrl = item.image_url || item.image || item.product_url;
+              {recommendations.filter(Boolean).map((item, index) => {
+                const imageUrl = item?.image_url || item?.image || item?.product_url;
                 const isSelected =
-                  selectedProduct?.product_id === item.product_id ||
-                  selectedProduct?.title === item.title;
+                  selectedProduct?.product_id === item?.product_id ||
+                  selectedProduct?.title === item?.title;
 
                 return (
                   <div
-                    key={`${item.product_id || item.title || index}`}
+                    key={`${item?.product_id || item?.title || index}`}
                     onClick={() => {
                       setSelectedProduct(item);
                     }}
@@ -527,7 +529,7 @@ const UploadSection = ({ onUploadSuccess }) => {
                         {imageUrl ? (
                           <img
                             src={imageUrl}
-                            alt={item.title || "Suggested clothing"}
+                            alt={item?.title || "Suggested clothing"}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         ) : (
@@ -543,8 +545,8 @@ const UploadSection = ({ onUploadSuccess }) => {
                           </div>
                         )}
                       </div>
-                      <p className="mt-2 font-medium text-sm line-clamp-1">{item.title || "Suggested piece"}</p>
-                      <p className="text-xs text-muted-foreground mb-3">{item.category || "Fashion pick"}</p>
+                      <p className="mt-2 font-medium text-sm line-clamp-1">{item?.title || "Suggested piece"}</p>
+                      <p className="text-xs text-muted-foreground mb-3">{item?.category || "Fashion pick"}</p>
                     </div>
 
                     <Button

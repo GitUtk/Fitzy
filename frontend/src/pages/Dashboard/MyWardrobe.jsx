@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 
 const WARDROBE_KEY = "wardrobeItems";
+const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Accessories"];
 const UPLOAD_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
@@ -79,31 +80,88 @@ function MyWardrobe() {
     localStorage.setItem(WARDROBE_KEY, JSON.stringify(newItems));
   };
 
-  const processFiles = (files) => {
+  const extractMetadata = async (file) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("You must be logged in to extract clothing metadata.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/recommendations/extract-metadata`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || "Failed to extract clothing metadata.");
+    }
+
+    return data?.metadata || null;
+  };
+
+  const inferCategoryFromMetadata = (metadata = {}) => {
+    const category = (metadata.category || "").toLowerCase();
+    const subcategory = (metadata.subcategory || "").toLowerCase();
+    const fit = (metadata.fit || "").toLowerCase();
+
+    const haystack = `${category} ${subcategory} ${fit}`;
+    if (haystack.includes("shirt") || haystack.includes("top") || haystack.includes("blouse") || haystack.includes("tee")) return "Tops";
+    if (haystack.includes("pant") || haystack.includes("jean") || haystack.includes("trouser") || haystack.includes("short")) return "Bottoms";
+    if (haystack.includes("dress") || haystack.includes("gown")) return "Dresses";
+    if (haystack.includes("coat") || haystack.includes("jacket") || haystack.includes("blazer") || haystack.includes("outerwear")) return "Outerwear";
+    if (haystack.includes("shoe") || haystack.includes("sneaker") || haystack.includes("boot") || haystack.includes("sandal")) return "Shoes";
+    if (haystack.includes("bag") || haystack.includes("belt") || haystack.includes("hat") || haystack.includes("cap") || haystack.includes("accessory")) return "Accessories";
+    return "";
+  };
+
+  const processFiles = async (files) => {
     const validFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!validFiles.length) return;
 
-    const readers = validFiles.map(
-      (file) =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            resolve({
-              id: `wardrobe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              src: e.target.result,
-              name: file.name.replace(/\.[^/.]+$/, ""),
-              category: "",
-              size: file.size,
-              addedAt: new Date().toISOString(),
-            });
-          };
-          reader.readAsDataURL(file);
-        })
-    );
+    try {
+      const readers = validFiles.map(
+        (file) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              resolve({
+                id: `wardrobe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                src: e.target.result,
+                name: file.name.replace(/\.[^/.]+$/, ""),
+                category: "",
+                metadata: null,
+                size: file.size,
+                addedAt: new Date().toISOString(),
+              });
+            };
+            reader.readAsDataURL(file);
+          })
+      );
 
-    Promise.all(readers).then((newPending) => {
-      setPendingItems(newPending);
-    });
+      const newPending = await Promise.all(readers);
+      const metadataResults = await Promise.allSettled(validFiles.map((file) => extractMetadata(file)));
+
+      const enrichedPending = newPending.map((item, index) => {
+        const metadataResult = metadataResults[index];
+        const metadata = metadataResult.status === "fulfilled" ? metadataResult.value : null;
+        return {
+          ...item,
+          metadata,
+          category: inferCategoryFromMetadata(metadata),
+        };
+      });
+
+      setPendingItems(enrichedPending);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "We couldn't extract metadata for one or more images.");
+    }
   };
 
   const handleFileChange = (e) => {
@@ -390,7 +448,7 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
 
   useEffect(() => {
     if (open) {
-      setTagged(pendingItems.map((item) => ({ ...item, category: "" })));
+      setTagged(pendingItems.map((item) => ({ ...item })));
     }
   }, [open, pendingItems]);
 
@@ -420,6 +478,14 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate mb-3">{item.name}</p>
+                {item.metadata && (
+                  <div className="mb-3 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+                    <p><span className="font-medium text-foreground">Category:</span> {item.metadata.category || "Unknown"}</p>
+                    <p><span className="font-medium text-foreground">Color:</span> {item.metadata.primaryColor || "Unknown"}{item.metadata.secondaryColor ? ` / ${item.metadata.secondaryColor}` : ""}</p>
+                    <p><span className="font-medium text-foreground">Material:</span> {item.metadata.material || "Unknown"}</p>
+                    <p><span className="font-medium text-foreground">Pattern:</span> {item.metadata.pattern || "Unknown"}</p>
+                  </div>
+                )}
                 <Label className="text-xs text-muted-foreground">
                   Select Category <span className="text-destructive">*</span>
                 </Label>
@@ -486,6 +552,13 @@ function WardrobeCard({ item, onDelete, onClick }) {
         <Badge variant="secondary" className="mt-1.5 text-xs">
           {item.category}
         </Badge>
+        {item.metadata?.primaryColor && (
+          <p className="mt-1 text-[11px] text-muted-foreground truncate">
+            {item.metadata.primaryColor}
+            {item.metadata.secondaryColor ? ` / ${item.metadata.secondaryColor}` : ""}
+            {item.metadata.material ? ` · ${item.metadata.material}` : ""}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
