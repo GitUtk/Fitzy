@@ -6,7 +6,7 @@ import RecentLooks from "./RecentLooks";
 import Profile from "../Profile/Profile";
 import MyWardrobe from "./MyWardrobe";
 import { Card, CardContent } from "@/components/ui/card";
-import GenderModal from "../components/GenderModal";
+import GenderModal from "../../components/GenderModal";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 

@@ -174,7 +174,7 @@ import SimilarProducts from "./SimilarProducts";
 import Sidebar from "../Dashboard/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import GenderModal from "../components/GenderModal";
+import GenderModal from "../../components/GenderModal";
 
 function StyleStudio() {
   const [selectedFile, setSelectedFile] = useState(null);
