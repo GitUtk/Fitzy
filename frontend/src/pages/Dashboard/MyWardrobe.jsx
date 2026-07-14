@@ -6,6 +6,8 @@ import {
   X,
   AlertCircle,
   FolderOpen,
+  Loader2,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,8 +24,38 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const WARDROBE_KEY = "wardrobeItems";
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
+const WARDROBE_KEY = "wardrobeItems";
+
+// Map Gemini category names to our wardrobe categories
+const CATEGORY_MAP = {
+  Shirts: "Tops",
+  "T-Shirts": "Tops",
+  "Casual Shirts": "Tops",
+  "Formal Shirts": "Tops",
+  Blouses: "Tops",
+  Jeans: "Bottoms",
+  Trousers: "Bottoms",
+  Shorts: "Bottoms",
+  Skirts: "Bottoms",
+  Dresses: "Dresses",
+  Outerwear: "Outerwear",
+  Jackets: "Outerwear",
+  Coats: "Outerwear",
+  Blazers: "Outerwear",
+  Shoes: "Shoes",
+  Sneakers: "Shoes",
+  Footwear: "Shoes",
+  Boots: "Shoes",
+  Accessories: "Accessories",
+  Bags: "Accessories",
+  Hats: "Accessories",
+  Belts: "Accessories",
+  Activewear: "Tops",
+  "Ethnic Wear": "Tops",
+  Lingerie: "Tops",
+  Swimwear: "Tops",
+};
 
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Accessories"];
 const UPLOAD_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
@@ -55,6 +87,37 @@ const OUTFIT_SUGGESTIONS = [
   },
 ];
 
+/** Call the extract-metadata API for a single File object */
+async function extractClothingMetadata(file) {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations/extract-metadata`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return data?.metadata ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Map a Gemini category string to one of our wardrobe categories */
+function mapCategory(geminiCategory) {
+  if (!geminiCategory) return "";
+  if (UPLOAD_CATEGORIES.includes(geminiCategory)) return geminiCategory;
+  return CATEGORY_MAP[geminiCategory] ?? "";
+}
+
 function MyWardrobe() {
   const [items, setItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -80,88 +143,53 @@ function MyWardrobe() {
     localStorage.setItem(WARDROBE_KEY, JSON.stringify(newItems));
   };
 
-  const extractMetadata = async (file) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("You must be logged in to extract clothing metadata.");
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch(`${API_BASE_URL}/recommendations/extract-metadata`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || "Failed to extract clothing metadata.");
-    }
-
-    return data?.metadata || null;
-  };
-
-  const inferCategoryFromMetadata = (metadata = {}) => {
-    const category = (metadata.category || "").toLowerCase();
-    const subcategory = (metadata.subcategory || "").toLowerCase();
-    const fit = (metadata.fit || "").toLowerCase();
-
-    const haystack = `${category} ${subcategory} ${fit}`;
-    if (haystack.includes("shirt") || haystack.includes("top") || haystack.includes("blouse") || haystack.includes("tee")) return "Tops";
-    if (haystack.includes("pant") || haystack.includes("jean") || haystack.includes("trouser") || haystack.includes("short")) return "Bottoms";
-    if (haystack.includes("dress") || haystack.includes("gown")) return "Dresses";
-    if (haystack.includes("coat") || haystack.includes("jacket") || haystack.includes("blazer") || haystack.includes("outerwear")) return "Outerwear";
-    if (haystack.includes("shoe") || haystack.includes("sneaker") || haystack.includes("boot") || haystack.includes("sandal")) return "Shoes";
-    if (haystack.includes("bag") || haystack.includes("belt") || haystack.includes("hat") || haystack.includes("cap") || haystack.includes("accessory")) return "Accessories";
-    return "";
-  };
-
-  const processFiles = async (files) => {
+  const processFiles = (files) => {
     const validFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!validFiles.length) return;
 
-    try {
-      const readers = validFiles.map(
-        (file) =>
-          new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              resolve({
-                id: `wardrobe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                src: e.target.result,
-                name: file.name.replace(/\.[^/.]+$/, ""),
-                category: "",
-                metadata: null,
-                size: file.size,
-                addedAt: new Date().toISOString(),
-              });
-            };
-            reader.readAsDataURL(file);
-          })
-      );
+    // Create pending items with loading state immediately
+    const initialPending = validFiles.map((file) => ({
+      id: `wardrobe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      file,
+      src: null,
+      name: file.name.replace(/\.[^/.]+$/, ""),
+      category: "",
+      metadata: null,
+      extracting: true,
+      size: file.size,
+      addedAt: new Date().toISOString(),
+    }));
 
-      const newPending = await Promise.all(readers);
-      const metadataResults = await Promise.allSettled(validFiles.map((file) => extractMetadata(file)));
+    // Read all files as data URLs
+    const readers = initialPending.map(
+      (pending) =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({ ...pending, src: e.target.result });
+          };
+          reader.readAsDataURL(pending.file);
+        })
+    );
 
-      const enrichedPending = newPending.map((item, index) => {
-        const metadataResult = metadataResults[index];
-        const metadata = metadataResult.status === "fulfilled" ? metadataResult.value : null;
-        return {
-          ...item,
-          metadata,
-          category: inferCategoryFromMetadata(metadata),
-        };
+    Promise.all(readers).then((withSrcs) => {
+      // Show modal immediately with loading spinners
+      setPendingItems(withSrcs);
+
+      // Extract metadata for each item in parallel
+      withSrcs.forEach((item) => {
+        extractClothingMetadata(item.file).then((metadata) => {
+          const mappedCategory = mapCategory(metadata?.category);
+          setPendingItems((prev) =>
+            prev.map((p) =>
+              p.id === item.id
+                ? { ...p, metadata, category: mappedCategory, extracting: false }
+                : p
+            )
+          );
+        });
       });
-
-      setPendingItems(enrichedPending);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "We couldn't extract metadata for one or more images.");
-    }
+    });
   };
 
   const handleFileChange = (e) => {
@@ -176,10 +204,13 @@ function MyWardrobe() {
   };
 
   const handleConfirmPending = (taggedItems) => {
-    const updated = [...items, ...taggedItems];
+    // Strip transient fields before persisting
+    const cleaned = taggedItems.map(({ file, extracting, editColor, editPattern, editMaterial, editFit, ...rest }) => rest);
+    const updated = [...items, ...cleaned];
     saveItems(updated);
     setPendingItems([]);
   };
+
 
   const handleDelete = (id) => {
     const updated = items.filter((item) => item.id !== id);
@@ -209,10 +240,10 @@ function MyWardrobe() {
       : items.filter((item) => item.category === activeCategory);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight text-red-600 dark:text-red-500">My Wardrobe</h2>
+          <h2 className="font-display text-2xl font-semibold tracking-tight">My Wardrobe</h2>
           <p className="text-muted-foreground mt-1">
             {items.length} item{items.length !== 1 ? "s" : ""} saved · Upload clothes to get AI outfit suggestions
           </p>
@@ -319,9 +350,10 @@ function MyWardrobe() {
             </div>
             <h3 className="font-display font-semibold text-lg">Upload Your Clothes</h3>
             <p className="text-muted-foreground text-sm mt-2">
-              Drag & drop images here, or click to browse
+              Drag &amp; drop images here, or click to browse
             </p>
             <p className="text-xs text-muted-foreground mt-2">Supports JPG, PNG, WEBP · Multiple files allowed</p>
+            <p className="text-xs text-primary/70 mt-1 font-medium">✨ AI will auto-detect category &amp; details</p>
           </CardContent>
         </Card>
       ) : (
@@ -418,6 +450,11 @@ function MyWardrobe() {
                       ))}
                     </div>
                   </div>
+
+                  {selectedItem.metadata && (
+                    <MetadataSummary metadata={selectedItem.metadata} />
+                  )}
+
                   <DialogDescription>
                     Added {new Date(selectedItem.addedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                   </DialogDescription>
@@ -443,70 +480,303 @@ function MyWardrobe() {
   );
 }
 
+/** Compact read-only display of AI-extracted metadata */
+function MetadataSummary({ metadata }) {
+  const tags = [
+    metadata.primaryColor,
+    metadata.pattern,
+    metadata.material,
+    metadata.fit,
+    ...(metadata.style || []),
+  ].filter(Boolean);
+
+  const occasions = (metadata.occasion || []).filter(Boolean);
+  const seasons = (metadata.season || []).filter(Boolean);
+
+  if (!tags.length && !occasions.length && !seasons.length) return null;
+
+  return (
+    <div className="space-y-2 pt-1 border-t">
+      <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+        <Sparkles className="h-3 w-3 text-primary" />
+        AI Detected Details
+        {metadata.confidence != null && (
+          <span className="ml-auto text-xs opacity-60">{Math.round(metadata.confidence * 100)}% confidence</span>
+        )}
+      </p>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {tags.map((t, i) => (
+            <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>
+          ))}
+        </div>
+      )}
+      {seasons.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium">Season:</span> {seasons.join(", ")}
+        </p>
+      )}
+      {occasions.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium">Occasion:</span> {occasions.join(", ")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Shimmer skeleton for loading state */
+function Skeleton({ className }) {
+  return (
+    <div
+      className={cn(
+        "animate-pulse rounded-md bg-muted",
+        className
+      )}
+    />
+  );
+}
+
 function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categories }) {
   const [tagged, setTagged] = useState([]);
 
+  // Initialise tagged state when modal opens
   useEffect(() => {
     if (open) {
       setTagged(pendingItems.map((item) => ({ ...item })));
     }
-  }, [open, pendingItems]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const setCategory = (id, category) => {
+  // Sync extracting/metadata as pendingItems update, but never overwrite user edits
+  useEffect(() => {
+    if (!open) return;
     setTagged((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, category } : item))
+      prev.map((t) => {
+        const updated = pendingItems.find((p) => p.id === t.id);
+        if (!updated) return t;
+        // Only apply metadata if we just finished extracting (transition: true -> false)
+        const justFinished = t.extracting && !updated.extracting;
+        return {
+          ...t,
+          extracting: updated.extracting,
+          // Pull in metadata only when extraction just completed
+          metadata: justFinished
+            ? updated.metadata
+            : t.metadata,
+          // Auto-fill editable fields only on first arrival, user edits take priority
+          name: justFinished && updated.metadata?.subcategory && t.name === (t._originalName ?? t.name)
+            ? t.name  // keep file name, subcategory is just a label
+            : t.name,
+          category:
+            t.category === "" && updated.category ? updated.category : t.category,
+          // Editable metadata fields — prefill from AI if user hasn't touched them
+          editColor:   justFinished && !t.editColor   ? (updated.metadata?.primaryColor ?? "")   : (t.editColor ?? ""),
+          editPattern: justFinished && !t.editPattern ? (updated.metadata?.pattern ?? "")        : (t.editPattern ?? ""),
+          editMaterial:justFinished && !t.editMaterial? (updated.metadata?.material ?? "")       : (t.editMaterial ?? ""),
+          editFit:     justFinished && !t.editFit     ? (updated.metadata?.fit ?? "")            : (t.editFit ?? ""),
+        };
+      })
+    );
+  }, [pendingItems, open]);
+
+  const updateField = (id, field, value) => {
+    setTagged((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
 
+  const setCategory = (id, category) => updateField(id, "category", category);
+
   const allTagged = tagged.every((item) => item.category !== "");
+  const anyExtracting = tagged.some((item) => item.extracting);
+
+  const handleSave = () => {
+    // Merge edited fields back into metadata before confirming
+    const final = tagged.map((item) => ({
+      ...item,
+      metadata: item.metadata
+        ? {
+            ...item.metadata,
+            primaryColor: item.editColor   || item.metadata.primaryColor,
+            pattern:      item.editPattern  || item.metadata.pattern,
+            material:     item.editMaterial || item.metadata.material,
+            fit:          item.editFit      || item.metadata.fit,
+          }
+        : null,
+    }));
+    onConfirm(final);
+  };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && setPendingItems([])}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Tag Your Clothes</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Tag className="h-4 w-4" />
+            Tag Your Clothes
+          </DialogTitle>
           <DialogDescription>
-            Select a category for each item before saving
+            {anyExtracting
+              ? "AI is analysing your items — details will appear shortly."
+              : "Review and edit the details, then save to your wardrobe."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-2">
+        <div className="space-y-5 py-2">
           {tagged.map((item) => (
-            <div key={item.id} className="flex gap-4 items-start">
-              <div className="w-20 h-20 rounded-lg overflow-hidden border flex-shrink-0">
-                <img src={item.src} alt={item.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate mb-3">{item.name}</p>
-                {item.metadata && (
-                  <div className="mb-3 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
-                    <p><span className="font-medium text-foreground">Category:</span> {item.metadata.category || "Unknown"}</p>
-                    <p><span className="font-medium text-foreground">Color:</span> {item.metadata.primaryColor || "Unknown"}{item.metadata.secondaryColor ? ` / ${item.metadata.secondaryColor}` : ""}</p>
-                    <p><span className="font-medium text-foreground">Material:</span> {item.metadata.material || "Unknown"}</p>
-                    <p><span className="font-medium text-foreground">Pattern:</span> {item.metadata.pattern || "Unknown"}</p>
-                  </div>
-                )}
-                <Label className="text-xs text-muted-foreground">
-                  Select Category <span className="text-destructive">*</span>
-                </Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {categories.map((cat) => (
-                    <Button
-                      key={cat}
-                      variant={item.category === cat ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCategory(item.id, cat)}
-                    >
-                      {cat}
-                    </Button>
-                  ))}
+            <div
+              key={item.id}
+              className={cn(
+                "rounded-xl border p-4 transition-all duration-300",
+                item.extracting
+                  ? "bg-muted/40 border-border"
+                  : "bg-card border-border shadow-sm"
+              )}
+            >
+              <div className="flex gap-4 items-start">
+                {/* Thumbnail */}
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border flex-shrink-0">
+                  {item.src ? (
+                    <img
+                      src={item.src}
+                      alt={item.name}
+                      className={cn(
+                        "w-full h-full object-cover transition-opacity duration-300",
+                        item.extracting ? "opacity-60" : "opacity-100"
+                      )}
+                    />
+                  ) : (
+                    <Skeleton className="w-full h-full" />
+                  )}
+                  {item.extracting && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30">
+                      <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      <span className="text-white text-[10px] font-medium">Analysing…</span>
+                    </div>
+                  )}
                 </div>
-                {item.category === "" && (
-                  <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    Please select a category
-                  </p>
-                )}
+
+                {/* Right-hand content */}
+                <div className="flex-1 min-w-0 space-y-3">
+
+                  {/* Item name (always editable) */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Item name</Label>
+                    <Input
+                      value={item.name}
+                      onChange={(e) => updateField(item.id, "name", e.target.value)}
+                      className="h-8 text-sm"
+                      placeholder="e.g. White Linen Shirt"
+                    />
+                  </div>
+
+                  {/* Metadata fields — skeleton while loading, editable after */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Color */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Colour</Label>
+                      {item.extracting ? (
+                        <Skeleton className="h-8 w-full" />
+                      ) : (
+                        <Input
+                          value={item.editColor ?? ""}
+                          onChange={(e) => updateField(item.id, "editColor", e.target.value)}
+                          className="h-8 text-sm"
+                          placeholder="e.g. White"
+                        />
+                      )}
+                    </div>
+                    {/* Pattern */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Pattern</Label>
+                      {item.extracting ? (
+                        <Skeleton className="h-8 w-full" />
+                      ) : (
+                        <Input
+                          value={item.editPattern ?? ""}
+                          onChange={(e) => updateField(item.id, "editPattern", e.target.value)}
+                          className="h-8 text-sm"
+                          placeholder="e.g. Plain"
+                        />
+                      )}
+                    </div>
+                    {/* Material */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Material</Label>
+                      {item.extracting ? (
+                        <Skeleton className="h-8 w-full" />
+                      ) : (
+                        <Input
+                          value={item.editMaterial ?? ""}
+                          onChange={(e) => updateField(item.id, "editMaterial", e.target.value)}
+                          className="h-8 text-sm"
+                          placeholder="e.g. Cotton"
+                        />
+                      )}
+                    </div>
+                    {/* Fit */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Fit</Label>
+                      {item.extracting ? (
+                        <Skeleton className="h-8 w-full" />
+                      ) : (
+                        <Input
+                          value={item.editFit ?? ""}
+                          onChange={(e) => updateField(item.id, "editFit", e.target.value)}
+                          className="h-8 text-sm"
+                          placeholder="e.g. Regular"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Confidence badge */}
+                  {!item.extracting && item.metadata?.confidence != null && (
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3 w-3 text-primary" />
+                      <span className="text-xs text-muted-foreground">
+                        AI confidence: {Math.round(item.metadata.confidence * 100)}%
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Category picker */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">
+                      Category <span className="text-destructive">*</span>
+                      {!item.extracting && item.category && item.metadata && (
+                        <span className="ml-1 text-primary font-medium">(auto-detected)</span>
+                      )}
+                    </Label>
+                    {item.extracting ? (
+                      <div className="flex gap-2 flex-wrap mt-1">
+                        {["…", "…", "…", "…"].map((_, i) => (
+                          <Skeleton key={i} className="h-8 w-20 rounded-md" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {categories.map((cat) => (
+                          <Button
+                            key={cat}
+                            variant={item.category === cat ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCategory(item.id, cat)}
+                          >
+                            {cat}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    {item.category === "" && !item.extracting && (
+                      <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Please select a category
+                      </p>
+                    )}
+                  </div>
+
+                </div>
               </div>
             </div>
           ))}
@@ -516,8 +786,15 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
           <Button variant="outline" onClick={() => setPendingItems([])}>
             Cancel
           </Button>
-          <Button disabled={!allTagged} onClick={() => onConfirm(tagged)}>
-            Save to Wardrobe ({tagged.length} item{tagged.length !== 1 ? "s" : ""})
+          <Button disabled={!allTagged || anyExtracting} onClick={handleSave}>
+            {anyExtracting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analysing…
+              </>
+            ) : (
+              <>Save to Wardrobe ({tagged.length} item{tagged.length !== 1 ? "s" : ""})</>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -549,16 +826,14 @@ function WardrobeCard({ item, onDelete, onClick }) {
       </div>
       <CardContent className="p-3">
         <p className="text-xs font-medium truncate">{item.name}</p>
-        <Badge variant="secondary" className="mt-1.5 text-xs">
-          {item.category}
-        </Badge>
-        {item.metadata?.primaryColor && (
-          <p className="mt-1 text-[11px] text-muted-foreground truncate">
-            {item.metadata.primaryColor}
-            {item.metadata.secondaryColor ? ` / ${item.metadata.secondaryColor}` : ""}
-            {item.metadata.material ? ` · ${item.metadata.material}` : ""}
-          </p>
-        )}
+        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+          <Badge variant="secondary" className="text-xs">
+            {item.category}
+          </Badge>
+          {item.metadata?.primaryColor && (
+            <span className="text-xs text-muted-foreground truncate">{item.metadata.primaryColor}</span>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
