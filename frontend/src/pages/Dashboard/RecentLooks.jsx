@@ -102,7 +102,7 @@ function RecentLooks({
 
   const displayedLooks = limit ? mergedLooks.slice(0, limit) : mergedLooks;
 
-  if (loading && mergedLooks.length === 0) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div>

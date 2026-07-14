@@ -379,39 +379,10 @@ function MyWardrobe() {
               </p>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Based on your {items.length} wardrobe item{items.length !== 1 ? "s" : ""}, here are some outfit ideas:
-                </p>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {OUTFIT_SUGGESTIONS.map((suggestion, i) => (
-                    <Card key={i} className="shadow-none hover:shadow-sm transition-shadow cursor-pointer">
-                      <CardContent className="p-4">
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-lg"
-                          style={{ backgroundColor: `${suggestion.color}15` }}
-                        >
-                          {suggestion.icon}
-                        </div>
-                        <h4 className="font-medium text-sm mb-1">{suggestion.title}</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{suggestion.description}</p>
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {items.slice(0, 3).map((item) => (
-                            <img
-                              key={item.id}
-                              src={item.src}
-                              alt={item.name}
-                              className="w-8 h-8 rounded-md object-cover border"
-                            />
-                          ))}
-                          {items.length > 3 && (
-                            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-xs font-medium text-primary">
-                              +{items.length - 3}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed rounded-xl bg-card">
+                  <Sparkles className="h-8 w-8 text-muted-foreground/60 mb-2 animate-pulse" />
+                  <p className="text-sm font-medium text-muted-foreground">This feature is under development</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">AI-powered personalized outfit recommendations are coming soon!</p>
                 </div>
               </>
             )}
