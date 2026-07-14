@@ -21,8 +21,7 @@ async def get_similar_outfits(
         raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
     try:
         file_bytes = await file.read()
-        gender = current_user.get("gender", "Male")
-        results = recommendation_service.find_similar(file_bytes, gender=gender)
+        results = recommendation_service.find_similar(file_bytes)
         return {"success": True, "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -80,84 +79,6 @@ async def analyze_outfit_style(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/extract-metadata")
-async def extract_clothing_metadata(
-    file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
-):
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="Gemini API Key is not configured.")
-    try:
-        file_bytes = await file.read()
-        base64_data = base64.b64encode(file_bytes).decode("utf-8")
-        mime_type = file.content_type
-        
-        prompt = (
-            "You are Fitzy's clothing metadata extractor.\n\n"
-            "Analyze the uploaded clothing item.\n\n"
-            "Return ONLY valid JSON.\n\n"
-            "Do not explain anything.\n\n"
-            "If a field is unknown, return null.\n\n"
-            "Use exactly this schema.\n\n"
-            "{\n"
-            "    \"category\":\"\",\n"
-            "    \"subcategory\":\"\",\n"
-            "    \"primaryColor\":\"\",\n"
-            "    \"secondaryColor\":\"\",\n"
-            "    \"pattern\":\"\",\n"
-            "    \"material\":\"\",\n"
-            "    \"fit\":\"\",\n"
-            "    \"style\":[],\n"
-            "    \"season\":[],\n"
-            "    \"occasion\":[],\n"
-            "    \"confidence\":0\n"
-            "}"
-        )
-        
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": prompt},
-                        {
-                            "inlineData": {
-                                "mimeType": mime_type,
-                                "data": base64_data
-                            }
-                        }
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "responseMimeType": "application/json"
-            }
-        }
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json=payload)
-            if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail=response.text)
-            response_json = response.json()
-            raw_text = response_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-            
-            if raw_text.startswith("```"):
-                lines = raw_text.split("\n")
-                if lines[0].startswith("```"):
-                    lines = lines[1:]
-                if lines[-1].startswith("```"):
-                    lines = lines[:-1]
-                raw_text = "\n".join(lines).strip()
-            
-            metadata = json.loads(raw_text)
-            return {"success": True, "metadata": metadata}
-    except json.JSONDecodeError as je:
-        raise HTTPException(status_code=520, detail=f"Failed to parse metadata from Gemini response: {str(je)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/stylist")
 async def virtual_stylist(
     file: UploadFile = File(...),
@@ -174,25 +95,17 @@ async def virtual_stylist(
         mime_type = file.content_type
         user_image_url = f"data:{mime_type};base64,{base64_data}"
         
-        gender = current_user.get("gender", "Male")
-        is_female = str(gender).lower() == "female"
-        
-        if is_female:
-            allowed_categories = "'Dresses', 'Tops', 'Bottoms'"
-        else:
-            allowed_categories = "'Shirts', 'T-Shirts | POLO', 'Jeans', 'Trousers', 'Cargo pants', 'Joggers', 'SHORTS', 'Overshirts'"
-        
         gemini_prompt = (
             f"You are a professional fashion stylist. Analyze the user's appearance in the image and their requested style prompt: '{prompt}'. "
-            f"Suggest a coordinated outfit consisting of 1-3 items from these specific categories: {allowed_categories}. "
+            "Suggest a coordinated outfit consisting of 1-3 items (e.g. a top, a bottom, footwear) from these specific categories: 'Shirts', 'T-Shirts | POLO', 'Jeans', 'Trousers', 'Footwear'. "
             "Return a JSON object with the following structure. Do not include markdown formatting like ```json or ``` in the output, return ONLY the raw JSON string:\n"
             "{\n"
             "  \"critique\": \"Your professional critique of their current outfit and how it relates to their request.\",\n"
             "  \"advice\": \"General advice on how they can pull off this style.\",\n"
             "  \"recommendations\": [\n"
             "    {\n"
-            "      \"category\": \"category name suggested from the allowed categories list\",\n"
-            "      \"search_query\": \"keywords to search in a fashion catalog (e.g., 'White Linen Shirt' or 'Floral Mini Dress')\",\n"
+            "      \"category\": \"Shirts\",\n"
+            "      \"search_query\": \"keywords to search in a fashion catalog (e.g., 'White Linen Shirt')\",\n"
             "      \"reason\": \"Why this item is recommended.\"\n"
             "    }\n"
             "  ]\n"
@@ -237,7 +150,7 @@ async def virtual_stylist(
             for rec in stylist_data.get("recommendations", []):
                 category = rec.get("category")
                 query = rec.get("search_query")
-                matched_products = recommendation_service.search_products(query, category, gender=gender, limit=3)
+                matched_products = recommendation_service.search_products(query, category, limit=3)
                 final_recommendations.append({
                     "category": category,
                     "reason": rec.get("reason"),
@@ -267,6 +180,85 @@ async def fetch_gradio(payload: dict = Body(...)):
         "created_at": datetime.utcnow()
     })
     return {"status": "success", "gradio_url": url.rstrip("/")}
+
+@router.post("/extract-metadata")
+async def extract_clothing_metadata(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image")
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="Gemini API Key not configured")
+    try:
+        file_bytes = await file.read()
+        base64_data = base64.b64encode(file_bytes).decode("utf-8")
+        mime_type = file.content_type
+
+        prompt = (
+            "You are a clothing metadata extraction expert. Analyze the provided image of a clothing item "
+            "(or a person wearing clothing) and extract structured metadata. "
+            "Return ONLY a raw JSON object — no markdown, no code fences, no extra text. "
+            "Use exactly this structure:\n"
+            "{\n"
+            '  "category": "<one of: Shirts, T-Shirts, Jeans, Trousers, Dresses, Outerwear, Shoes, Accessories, Shorts, Skirts, Activewear, Ethnic Wear, Lingerie, Swimwear>",\n'
+            '  "subcategory": "<specific subcategory, e.g. Casual Shirts, Slim Fit Jeans, etc.>",\n'
+            '  "primaryColor": "<dominant color name>",\n'
+            '  "secondaryColor": "<second color name or null>",\n'
+            '  "pattern": "<e.g. Plain, Striped, Checked, Floral, Graphic, etc.>",\n'
+            '  "material": "<e.g. Cotton, Linen, Polyester, Denim, Wool, etc. or null if unclear>",\n'
+            '  "fit": "<e.g. Regular, Slim, Oversized, Relaxed, Fitted, etc.>",\n'
+            '  "style": ["<style tag 1>", "<style tag 2>"],\n'
+            '  "season": ["<season 1>", "<season 2>"],\n'
+            '  "occasion": ["<occasion 1>", "<occasion 2>"],\n'
+            '  "confidence": <float between 0.0 and 1.0>\n'
+            "}"
+        )
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inlineData": {
+                                "mimeType": mime_type,
+                                "data": base64_data
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            response = await client.post(url, json=payload)
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+
+            response_json = response.json()
+            raw_text = response_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+            # Strip markdown code fences if present
+            if raw_text.startswith("```"):
+                lines = raw_text.split("\n")
+                lines = lines[1:] if lines[0].startswith("```") else lines
+                lines = lines[:-1] if lines and lines[-1].startswith("```") else lines
+                raw_text = "\n".join(lines).strip()
+
+            try:
+                metadata = json.loads(raw_text)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=520, detail="Failed to parse metadata from Gemini response")
+
+            return {"success": True, "metadata": metadata}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/tryon")
 async def virtual_tryon(
