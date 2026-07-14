@@ -481,6 +481,138 @@ person_url: <optional URL to user photo>
 
 ---
 
+### Get Wardrobe Items
+
+#### `GET /recommendations/wardrobe`
+
+Retrieves all saved wardrobe items for the authenticated user.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response — 200 OK**
+```json
+[
+  {
+    "id": "64f1c9c2a1b2c3d4e5f6g7h7",
+    "src": "https://res.cloudinary.com/...",
+    "name": "White Linen Shirt",
+    "category": "Tops",
+    "metadata": {
+      "category": "Shirts",
+      "subcategory": "Casual Shirts",
+      "primaryColor": "White",
+      "secondaryColor": null,
+      "pattern": "Plain",
+      "material": "Linen",
+      "fit": "Regular",
+      "style": ["Casual", "Summer"],
+      "season": ["Summer", "Spring"],
+      "occasion": ["Beach", "Casual Outing"],
+      "confidence": 0.95
+    },
+    "addedAt": "2026-06-22T16:45:00.123456"
+  }
+]
+```
+
+---
+
+### Add Wardrobe Item
+
+#### `POST /recommendations/wardrobe`
+
+Saves a verified clothing item to MongoDB after uploading the image to Cloudinary. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request — multipart/form-data**
+```
+file: <binary image data>
+name: "White Linen Shirt"
+category: "Tops"
+metadata: "{\"category\":\"Shirts\",\"subcategory\":\"Casual Shirts\",\"primaryColor\":\"White\",\"secondaryColor\":null,\"pattern\":\"Plain\",\"material\":\"Linen\",\"fit\":\"Regular\",\"style\":[\"Casual\",\"Summer\"],\"season\":[\"Summer\",\"Spring\"],\"occasion\":[\"Beach\",\"Casual Outing\"],\"confidence\":0.95}"
+```
+
+**Response — 200 OK**
+```json
+{
+  "id": "64f1c9c2a1b2c3d4e5f6g7h7",
+  "src": "https://res.cloudinary.com/...",
+  "name": "White Linen Shirt",
+  "category": "Tops",
+  "metadata": {
+    "category": "Shirts",
+    "subcategory": "Casual Shirts",
+    "primaryColor": "White",
+    "secondaryColor": null,
+    "pattern": "Plain",
+    "material": "Linen",
+    "fit": "Regular",
+    "style": ["Casual", "Summer"],
+    "season": ["Summer", "Spring"],
+    "occasion": ["Beach", "Casual Outing"],
+    "confidence": 0.95
+  },
+  "addedAt": "2026-06-22T16:45:00.123456"
+}
+```
+
+---
+
+### Update Wardrobe Item
+
+#### `PUT /recommendations/wardrobe/{item_id}`
+
+Updates the name and/or category of an existing wardrobe item. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request Body**
+```json
+{
+  "name": "Summer White Linen Shirt",
+  "category": "Tops"
+}
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### Delete Wardrobe Item
+
+#### `DELETE /recommendations/wardrobe/{item_id}`
+
+Deletes a wardrobe item from MongoDB. Requires token authentication.
+
+**Headers**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response — 200 OK**
+```json
+{
+  "success": true
+}
+```
+
+---
+
 ## Authentication Flow
 
 ```
@@ -529,6 +661,30 @@ person_url: <optional URL to user photo>
   "_id": "ObjectId",
   "user_id": "string",
   "image_url": "string",
+  "created_at": "ISODate"
+}
+```
+
+**Collection:** `clothing_metadata`
+
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "string",
+  "image_url": "string",
+  "metadata": {
+    "category": "string",
+    "subcategory": "string",
+    "primaryColor": "string",
+    "secondaryColor": "string or null",
+    "pattern": "string",
+    "material": "string or null",
+    "fit": "string",
+    "style": ["string"],
+    "season": ["string"],
+    "occasion": ["string"],
+    "confidence": "float"
+  },
   "created_at": "ISODate"
 }
 ```

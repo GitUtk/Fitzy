@@ -2,6 +2,7 @@ import base64
 import json
 import httpx
 from datetime import datetime
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, Body
 from app.api.deps import get_current_user
 from app.services.recommendation_service import recommendation_service
@@ -289,5 +290,115 @@ async def virtual_tryon(
         await db["looks"].insert_one(look)
         
         return {"success": True, "tryon_image_url": tryon_image_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/wardrobe")
+async def get_wardrobe(current_user: dict = Depends(get_current_user)):
+    try:
+        cursor = db["clothing_metadata"].find({"user_id": current_user["id"]}).sort("created_at", -1)
+        items = await cursor.to_list(length=500)
+        
+        result = []
+        for item in items:
+            result.append({
+                "id": str(item["_id"]),
+                "src": item.get("image_url"),
+                "name": item.get("name"),
+                "category": item.get("category"),
+                "metadata": item.get("metadata"),
+                "addedAt": item.get("created_at").isoformat() if isinstance(item.get("created_at"), datetime) else item.get("created_at")
+            })
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/wardrobe")
+async def add_wardrobe_item(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    category: str = Form(...),
+    metadata: str = Form(...),  # JSON-serialized metadata
+    current_user: dict = Depends(get_current_user)
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image")
+    try:
+        file_bytes = await file.read()
+        
+        # Upload image to Cloudinary to get persistent URL
+        upload_res = await upload_image_to_cloudinary(file_bytes)
+        image_url = upload_res.get("secure_url")
+        
+        # Parse the JSON string
+        try:
+            parsed_metadata = json.loads(metadata) if metadata else {}
+        except json.JSONDecodeError:
+            parsed_metadata = {}
+            
+        # Store in MongoDB
+        metadata_doc = {
+            "user_id": current_user["id"],
+            "name": name,
+            "category": category,
+            "image_url": image_url,
+            "metadata": parsed_metadata,
+            "created_at": datetime.utcnow()
+        }
+        await db["clothing_metadata"].insert_one(metadata_doc)
+        
+        return {
+            "id": str(metadata_doc["_id"]),
+            "src": image_url,
+            "name": name,
+            "category": category,
+            "metadata": parsed_metadata,
+            "addedAt": metadata_doc["created_at"].isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/wardrobe/{item_id}")
+async def update_wardrobe_item(
+    item_id: str,
+    payload: dict = Body(...),
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        update_data = {}
+        if "name" in payload:
+            update_data["name"] = payload["name"]
+        if "category" in payload:
+            update_data["category"] = payload["category"]
+            
+        if not update_data:
+            return {"success": True}
+            
+        result = await db["clothing_metadata"].update_one(
+            {"_id": ObjectId(item_id), "user_id": current_user["id"]},
+            {"$set": update_data}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Item not found")
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/wardrobe/{item_id}")
+async def delete_wardrobe_item(
+    item_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        result = await db["clothing_metadata"].delete_one(
+            {"_id": ObjectId(item_id), "user_id": current_user["id"]}
+        )
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Item not found")
+        return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

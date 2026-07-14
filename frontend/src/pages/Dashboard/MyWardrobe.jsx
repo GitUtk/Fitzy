@@ -111,6 +111,91 @@ async function extractClothingMetadata(file) {
   }
 }
 
+/** Fetch wardrobe items from MongoDB */
+async function fetchWardrobeItems() {
+  const token = localStorage.getItem("token");
+  if (!token) return [];
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations/wardrobe`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Save a single verified wardrobe item to Cloudinary/MongoDB */
+async function saveWardrobeItem(item) {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  const formData = new FormData();
+  formData.append("file", item.file);
+  formData.append("name", item.name);
+  formData.append("category", item.category);
+  formData.append("metadata", JSON.stringify(item.metadata ?? {}));
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations/wardrobe`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/** Update wardrobe item in MongoDB */
+async function updateWardrobeItem(id, payload) {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations/wardrobe/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Delete wardrobe item from MongoDB */
+async function deleteWardrobeItem(id) {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommendations/wardrobe/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** Map a Gemini category string to one of our wardrobe categories */
 function mapCategory(geminiCategory) {
   if (!geminiCategory) return "";
@@ -128,20 +213,10 @@ function MyWardrobe() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(WARDROBE_KEY);
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    fetchWardrobeItems().then((fetchedItems) => {
+      setItems(fetchedItems);
+    });
   }, []);
-
-  const saveItems = (newItems) => {
-    setItems(newItems);
-    localStorage.setItem(WARDROBE_KEY, JSON.stringify(newItems));
-  };
 
   const processFiles = (files) => {
     const validFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
@@ -203,35 +278,46 @@ function MyWardrobe() {
     processFiles(e.dataTransfer.files);
   };
 
-  const handleConfirmPending = (taggedItems) => {
-    // Strip transient fields before persisting
-    const cleaned = taggedItems.map(({ file, extracting, editColor, editPattern, editMaterial, editFit, ...rest }) => rest);
-    const updated = [...items, ...cleaned];
-    saveItems(updated);
-    setPendingItems([]);
+  const handleConfirmPending = async (taggedItems) => {
+    try {
+      // Save all items to MongoDB/Cloudinary in parallel
+      const saved = await Promise.all(taggedItems.map(saveWardrobeItem));
+      const successful = saved.filter(Boolean);
+      setItems((prev) => [...successful, ...prev]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPendingItems([]);
+    }
   };
 
 
-  const handleDelete = (id) => {
-    const updated = items.filter((item) => item.id !== id);
-    saveItems(updated);
-    if (selectedItem?.id === id) setSelectedItem(null);
+  const handleDelete = async (id) => {
+    const success = await deleteWardrobeItem(id);
+    if (success) {
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      if (selectedItem?.id === id) setSelectedItem(null);
+    }
   };
 
-  const handleCategoryChange = (id, category) => {
-    const updated = items.map((item) =>
-      item.id === id ? { ...item, category } : item
-    );
-    saveItems(updated);
-    if (selectedItem?.id === id) setSelectedItem({ ...selectedItem, category });
+  const handleCategoryChange = async (id, category) => {
+    const success = await updateWardrobeItem(id, { category });
+    if (success) {
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, category } : item))
+      );
+      if (selectedItem?.id === id) setSelectedItem({ ...selectedItem, category });
+    }
   };
 
-  const handleRename = (id, name) => {
-    const updated = items.map((item) =>
-      item.id === id ? { ...item, name } : item
-    );
-    saveItems(updated);
-    if (selectedItem?.id === id) setSelectedItem({ ...selectedItem, name });
+  const handleRename = async (id, name) => {
+    const success = await updateWardrobeItem(id, { name });
+    if (success) {
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, name } : item))
+      );
+      if (selectedItem?.id === id) setSelectedItem({ ...selectedItem, name });
+    }
   };
 
   const filteredItems =
