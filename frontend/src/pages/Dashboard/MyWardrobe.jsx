@@ -8,6 +8,11 @@ import {
   FolderOpen,
   Loader2,
   Tag,
+  ExternalLink,
+  Shirt,
+  ShoppingBag,
+  Layers,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import PurchaseModal from "@/components/PurchaseModal";
 import {
   Dialog,
   DialogContent,
@@ -64,25 +70,25 @@ const OUTFIT_SUGGESTIONS = [
   {
     title: "Casual Day Out",
     description: "Mix your tops with bottoms for a relaxed everyday look.",
-    icon: "☀️",
+    icon: "",
     color: "hsl(var(--primary))",
   },
   {
     title: "Work Ready",
     description: "Pair outerwear with formal tops for a professional vibe.",
-    icon: "💼",
+    icon: "",
     color: "#D946EF",
   },
   {
     title: "Weekend Brunch",
     description: "Light layers and accessories for a chic weekend feel.",
-    icon: "☕",
+    icon: "",
     color: "#F59E0B",
   },
   {
     title: "Evening Glam",
     description: "Dress up your wardrobe pieces for a night out.",
-    icon: "✨",
+    icon: "",
     color: "#EC4899",
   },
 ];
@@ -210,13 +216,89 @@ function MyWardrobe() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [pendingItems, setPendingItems] = useState([]);
+  const [activeModel, setActiveModel] = useState("model1"); // 'model1': Uploaded Wardrobe, 'model2': Fitzy Catalog
+  const [outfitsLoading, setOutfitsLoading] = useState(false);
+  const [model1Pairs, setModel1Pairs] = useState([]);
+  const [model2Pairs, setModel2Pairs] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [purchaseModalProduct, setPurchaseModalProduct] = useState(null);
   const fileInputRef = useRef(null);
+
+  const fetchProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     fetchWardrobeItems().then((fetchedItems) => {
       setItems(fetchedItems);
     });
+    fetchProfile();
   }, []);
+
+  const handleGenerateOutfits = async () => {
+    setShowSuggestions(true);
+    setOutfitsLoading(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_BASE_URL}/recommendations/wardrobe-outfits`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ items }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setModel1Pairs(data.model_1_pairs || []);
+        setModel2Pairs(data.model_2_pairs || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setOutfitsLoading(false);
+    }
+  };
+
+  const getRecommendedSize = (item) => {
+    if (!userProfile) return null;
+    const cat = (item?.category || "").toLowerCase();
+    const isBottom = cat.includes("trouser") || cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short");
+
+    if (Array.isArray(userProfile.purchases) && userProfile.purchases.length > 0) {
+      const match = userProfile.purchases.find((p) => {
+        const pCat = (p.category || "").toLowerCase();
+        return isBottom
+          ? pCat.includes("trouser") || pCat.includes("pant") || pCat.includes("jean") || pCat.includes("bottom")
+          : pCat.includes("top") || pCat.includes("shirt") || pCat.includes("jacket");
+      });
+      if (match && match.bought_size) {
+        return { size: match.bought_size, source: "past orders" };
+      }
+    }
+
+    if (isBottom && userProfile.bottomSize) {
+      return { size: userProfile.bottomSize, source: "your profile" };
+    }
+    if (!isBottom && userProfile.topSize) {
+      return { size: userProfile.topSize, source: "your profile" };
+    }
+
+    return null;
+  };
 
   const processFiles = (files) => {
     const validFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
@@ -336,11 +418,18 @@ function MyWardrobe() {
         </div>
         <div className="flex gap-2">
           <Button
-            variant="outline"
-            onClick={() => setShowSuggestions(!showSuggestions)}
+            variant={showSuggestions ? "default" : "outline"}
+            onClick={() => {
+              if (!showSuggestions) {
+                handleGenerateOutfits();
+              } else {
+                setShowSuggestions(false);
+              }
+            }}
+            className="font-semibold text-xs gap-1.5"
           >
-            <Sparkles className="h-4 w-4" />
-            Outfit Ideas
+            <Sparkles className="h-4 w-4 text-red-500" />
+            <span>Generate Outfit Ideas</span>
           </Button>
           <Button onClick={() => fileInputRef.current?.click()}>
             <Upload className="h-4 w-4" />
@@ -358,37 +447,224 @@ function MyWardrobe() {
       </div>
 
       {showSuggestions && (
-        <Card className="border-primary/20 bg-accent/30">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base">
-                AI Outfit Suggestions
-                {items.length === 0 && (
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">
-                    (Upload clothes to get personalized suggestions)
-                  </span>
-                )}
-              </CardTitle>
+        <Card className="border-red-500/20 bg-card shadow-md">
+          <CardHeader className="pb-3 border-b border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-red-500" />
+                <div>
+                  <CardTitle className="text-lg font-bold text-foreground">AI Outfit Ideas</CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground">
+                    Discover style combinations powered by your saved wardrobe & catalog.
+                  </CardDescription>
+                </div>
+              </div>
+
+              {/* Dual Model Switcher */}
+              <div className="flex items-center gap-1.5 bg-muted p-1 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setActiveModel("model1")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5",
+                    activeModel === "model1"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Shirt className="h-3.5 w-3.5 text-red-500" />
+                  <span>From Your Wardrobe</span>
+                  {model1Pairs.length > 0 && (
+                    <span className="bg-red-500/10 text-red-500 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                      {model1Pairs.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveModel("model2")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5",
+                    activeModel === "model2"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <ShoppingBag className="h-3.5 w-3.5 text-red-500" />
+                  <span>From Fitzy Catalog</span>
+                  {model2Pairs.length > 0 && (
+                    <span className="bg-red-500/10 text-red-500 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                      {model2Pairs.length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
-            {items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Add some clothes to your wardrobe first and we'll suggest outfits based on what you own!
-              </p>
-            ) : (
-              <>
-                <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed rounded-xl bg-card">
-                  <Sparkles className="h-8 w-8 text-muted-foreground/60 mb-2 animate-pulse" />
-                  <p className="text-sm font-medium text-muted-foreground">This feature is under development</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">AI-powered personalized outfit recommendations are coming soon!</p>
+
+          <CardContent className="pt-4">
+            {outfitsLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Loader2 className="h-8 w-8 text-red-500 animate-spin mb-3" />
+                <p className="text-sm font-semibold">Generating outfit recommendations...</p>
+                <p className="text-xs text-muted-foreground mt-1">Analyzing color compatibility, fit, and catalog matches</p>
+              </div>
+            ) : items.length === 0 ? (
+              <div className="text-center py-10">
+                <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium">Your wardrobe is currently empty.</p>
+                <p className="text-xs text-muted-foreground mt-1 mb-4">Upload tops & bottoms above to generate personalized outfits!</p>
+                <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+                  Upload Clothes
+                </Button>
+              </div>
+            ) : activeModel === "model1" ? (
+              /* MODEL 1: Outfits using uploaded wardrobe items */
+              <div className="space-y-4">
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium">
+                  <strong>Model 1: From Your Uploaded Wardrobe</strong> — Pairings created exclusively from items you own and uploaded.
                 </div>
-              </>
+
+                {model1Pairs.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed rounded-xl">
+                    <p className="text-sm font-medium">Add more items to unlock wardrobe pairings.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Upload both Tops and Bottoms to generate complete outfit pairs from your closet!</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                    {model1Pairs.map((pair) => (
+                      <div key={pair.id} className="p-4 rounded-xl border border-border bg-background flex flex-col justify-between space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-sm text-foreground line-clamp-1">{pair.title}</h4>
+                          <Badge variant="outline" className="text-[10px] text-red-500 border-red-500/30">
+                            Saved Wardrobe
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 items-center bg-muted/30 p-2 rounded-lg">
+                          {pair.top ? (
+                            <div className="text-center">
+                              <img src={pair.top.src} alt={pair.top.name} className="h-28 w-full object-cover rounded-md border border-border" />
+                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.top.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{pair.top.category}</p>
+                            </div>
+                          ) : pair.item ? (
+                            <div className="text-center col-span-2">
+                              <img src={pair.item.src} alt={pair.item.name} className="h-32 w-48 mx-auto object-cover rounded-md border border-border" />
+                              <p className="text-[11px] font-semibold mt-1">{pair.item.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{pair.item.category}</p>
+                            </div>
+                          ) : null}
+
+                          {pair.bottom && (
+                            <div className="text-center">
+                              <img src={pair.bottom.src} alt={pair.bottom.name} className="h-28 w-full object-cover rounded-md border border-border" />
+                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.bottom.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{pair.bottom.category}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-muted-foreground italic">"{pair.style_note}"</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* MODEL 2: Outfits combining uploaded items with Fitzy Catalog */
+              <div className="space-y-4">
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium">
+                  <strong>Model 2: From Fitzy Catalog</strong> — Complementary topware & bottomwear suggested from the product catalog to pair with your uploaded items.
+                </div>
+
+                {model2Pairs.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed rounded-xl">
+                    <p className="text-sm font-medium">Finding catalog matches...</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {model2Pairs.map((pair) => {
+                      const rec = getRecommendedSize(pair.catalog_item);
+                      return (
+                        <div key={pair.id} className="p-4 rounded-xl border border-border bg-background flex flex-col justify-between space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-sm text-foreground line-clamp-1">{pair.title}</h4>
+                            <Badge variant="secondary" className="text-[10px]">
+                              Catalog Match
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 items-center bg-muted/30 p-2 rounded-lg">
+                            <div className="text-center">
+                              <div className="relative">
+                                <img src={pair.user_item.src} alt={pair.user_item.name} className="h-28 w-full object-cover rounded-md border border-border" />
+                                <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                  Your Item
+                                </span>
+                              </div>
+                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.user_item.name}</p>
+                            </div>
+
+                            <div className="text-center">
+                              <div className="relative">
+                                <img src={pair.catalog_item.image_url || pair.catalog_item.image} alt={pair.catalog_item.title} className="h-28 w-full object-cover rounded-md border border-border" />
+                                <span className="absolute bottom-1 right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                  Catalog
+                                </span>
+                              </div>
+                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.catalog_item.title}</p>
+                              {pair.catalog_item.price && (
+                                <p className="text-[10px] font-bold text-red-500">₹{pair.catalog_item.price}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {rec && (
+                            <div className="p-2 rounded-md bg-red-500/10 text-xs text-red-600 dark:text-red-400 font-semibold flex items-center justify-between">
+                              <span>Recommended Catalog Size:</span>
+                              <strong className="bg-red-600 text-white px-2 py-0.5 rounded text-[11px] font-bold">{rec.size}</strong>
+                            </div>
+                          )}
+
+                          <p className="text-xs text-muted-foreground italic">"{pair.style_note}"</p>
+
+                          <div className="flex gap-2 pt-1">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-xs font-semibold flex items-center justify-center gap-1"
+                              onClick={() => {
+                                if (pair.catalog_item.product_url) {
+                                  window.open(pair.catalog_item.product_url, "_blank", "noopener,noreferrer");
+                                }
+                                setPurchaseModalProduct(pair.catalog_item);
+                                setIsPurchaseModalOpen(true);
+                              }}
+                            >
+                              <span>Buy Catalog Item</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
       )}
+
+      <PurchaseModal
+        isOpen={isPurchaseModalOpen}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        product={purchaseModalProduct}
+        onPurchaseSaved={() => fetchProfile()}
+      />
 
       {items.length === 0 ? (
         <Card
@@ -410,7 +686,7 @@ function MyWardrobe() {
               Drag &amp; drop images here, or click to browse
             </p>
             <p className="text-xs text-muted-foreground mt-2">Supports JPG, PNG, WEBP · Multiple files allowed</p>
-            <p className="text-xs text-primary/70 mt-1 font-medium">✨ AI will auto-detect category &amp; details</p>
+            <p className="text-xs text-primary/70 mt-1 font-medium">AI will auto-detect category &amp; details</p>
           </CardContent>
         </Card>
       ) : (

@@ -125,7 +125,7 @@ function SimilarProducts({ products, loading, error }) {
 
                       {rec && (
                         <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-400 font-medium">
-                          💡 We recommend buying size <strong>{rec.size}</strong> based on {rec.source}
+                          We recommend buying size <strong>{rec.size}</strong> based on {rec.source}
                         </div>
                       )}
 

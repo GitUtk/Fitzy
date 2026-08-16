@@ -402,3 +402,86 @@ async def delete_wardrobe_item(
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/wardrobe-outfits")
+async def generate_wardrobe_outfits(
+    payload: dict = Body(default={}),
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        user_id = current_user["id"]
+        gender = current_user.get("gender", "Male")
+        
+        # Retrieve wardrobe items for user
+        raw_items = await db["clothing_metadata"].find({"user_id": user_id}).to_list(100)
+        items = []
+        for i in raw_items:
+            items.append({
+                "id": str(i["_id"]),
+                "name": i.get("name", "Clothing Item"),
+                "category": i.get("category", "Tops"),
+                "src": i.get("src", ""),
+                "metadata": i.get("metadata", {})
+            })
+            
+        if not items and "items" in payload:
+            items = payload["items"]
+            
+        tops = [i for i in items if i.get("category") in ["Tops", "Outerwear", "Dresses"]]
+        bottoms = [i for i in items if i.get("category") == "Bottoms"]
+        
+        # Model 1: Pairings using user's uploaded wardrobe items exclusively
+        model_1_pairs = []
+        if tops and bottoms:
+            for top in tops:
+                for bottom in bottoms:
+                    model_1_pairs.append({
+                        "id": f"m1-{top['id']}-{bottom['id']}",
+                        "title": f"{top['name']} + {bottom['name']}",
+                        "style_note": f"Combines your {top['name']} with your {bottom['name']} for a complete custom look.",
+                        "top": top,
+                        "bottom": bottom
+                    })
+        elif items:
+            # If user has only tops or only bottoms, create single item focus suggestions
+            for item in items:
+                model_1_pairs.append({
+                    "id": f"m1-{item['id']}",
+                    "title": item["name"],
+                    "style_note": f"Your saved {item['name']} - pair with matching accessories or pieces from your closet.",
+                    "item": item
+                })
+                
+        # Model 2: Pairings using user items matched with Fitzy catalog items
+        model_2_pairs = []
+        for item in items:
+            cat = (item.get("category") or "").lower()
+            is_bottom = "bottom" in cat or "pant" in cat or "jean" in cat or "trouser" in cat
+            
+            target_catalog_category = "Shirts" if is_bottom else "Trousers"
+            query = item.get("name", "") or ("T-Shirt" if is_bottom else "Chinos")
+            
+            matched_products = recommendation_service.search_products(
+                query=query,
+                category=target_catalog_category,
+                gender=gender,
+                limit=2
+            )
+            
+            for prod in matched_products:
+                model_2_pairs.append({
+                    "id": f"m2-{item['id']}-{prod['product_id']}",
+                    "title": f"Your {item['name']} + {prod['title']}",
+                    "style_note": f"Pair your uploaded {item['name']} with this trending {prod['title']} from Fitzy catalog.",
+                    "user_item": item,
+                    "catalog_item": prod
+                })
+                
+        return {
+            "success": True,
+            "model_1_pairs": model_1_pairs[:8],
+            "model_2_pairs": model_2_pairs[:8]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

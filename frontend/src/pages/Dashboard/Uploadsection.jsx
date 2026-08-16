@@ -603,7 +603,7 @@ const UploadSection = ({ onUploadSuccess }) => {
 
                       {rec && (
                         <p className="text-[11px] text-red-500 font-semibold mb-2 line-clamp-1">
-                          💡 Recommended: <strong>{rec.size}</strong> ({rec.source})
+                          Recommended: <strong>{rec.size}</strong> ({rec.source})
                         </p>
                       )}
                     </div>

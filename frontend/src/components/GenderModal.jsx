@@ -106,29 +106,27 @@ export default function GenderModal({ isOpen, onSuccess }) {
           <button
             type="button"
             onClick={() => setSelectedGender("Male")}
-            className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3
+            className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-2
               ${
                 selectedGender === "Male"
                   ? "border-primary bg-primary/5 text-primary shadow-sm"
                   : "border-border bg-background hover:bg-muted text-muted-foreground"
               }`}
           >
-            <span className="text-3xl">👨</span>
-            <span className="font-bold text-sm">Male</span>
+            <span className="font-bold text-base">Male</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSelectedGender("Female")}
-            className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3
+            className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-2
               ${
                 selectedGender === "Female"
                   ? "border-primary bg-primary/5 text-primary shadow-sm"
                   : "border-border bg-background hover:bg-muted text-muted-foreground"
               }`}
           >
-            <span className="text-3xl">👩</span>
-            <span className="font-bold text-sm">Female</span>
+            <span className="font-bold text-base">Female</span>
           </button>
         </div>
 
