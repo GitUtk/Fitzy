@@ -413,20 +413,46 @@ async def generate_wardrobe_outfits(
         user_id = current_user["id"]
         gender = current_user.get("gender", "Male")
         
-        # Retrieve wardrobe items for user
+        # Retrieve wardrobe items for user from clothing_metadata
         raw_items = await db["clothing_metadata"].find({"user_id": user_id}).to_list(100)
         items = []
         for i in raw_items:
+            img_src = i.get("image_url") or i.get("src") or i.get("url") or i.get("image") or ""
             items.append({
                 "id": str(i["_id"]),
-                "name": i.get("name", "Clothing Item"),
-                "category": i.get("category", "Tops"),
-                "src": i.get("src", ""),
+                "name": i.get("name") or "Clothing Item",
+                "category": i.get("category") or "Tops",
+                "src": img_src,
+                "image_url": img_src,
                 "metadata": i.get("metadata", {})
             })
             
         if not items and "items" in payload:
-            items = payload["items"]
+            for i in payload["items"]:
+                img_src = i.get("src") or i.get("image_url") or i.get("url") or i.get("image") or ""
+                items.append({
+                    "id": str(i.get("id") or i.get("_id") or Date.now()),
+                    "name": i.get("name") or "Clothing Item",
+                    "category": i.get("category") or "Tops",
+                    "src": img_src,
+                    "image_url": img_src,
+                    "metadata": i.get("metadata", {})
+                })
+                
+        # If still no items, check user's uploaded looks history from db["looks"]
+        if not items:
+            raw_looks = await db["looks"].find({"user_id": user_id}).sort("created_at", -1).to_list(20)
+            for idx, look in enumerate(raw_looks):
+                img_src = look.get("image_url") or look.get("src") or look.get("url") or ""
+                if img_src:
+                    items.append({
+                        "id": str(look.get("_id", f"look-{idx}")),
+                        "name": f"Uploaded item ({idx+1})",
+                        "category": "Tops" if idx % 2 == 0 else "Bottoms",
+                        "src": img_src,
+                        "image_url": img_src,
+                        "metadata": {}
+                    })
             
         tops = [i for i in items if i.get("category") in ["Tops", "Outerwear", "Dresses"]]
         bottoms = [i for i in items if i.get("category") == "Bottoms"]

@@ -545,13 +545,13 @@ function MyWardrobe() {
                         <div className="grid grid-cols-2 gap-2 items-center bg-muted/30 p-2 rounded-lg">
                           {pair.top ? (
                             <div className="text-center">
-                              <img src={pair.top.src} alt={pair.top.name} className="h-28 w-full object-cover rounded-md border border-border" />
+                              <img src={pair.top.src || pair.top.image_url || pair.top.url || pair.top.image} alt={pair.top.name} className="h-28 w-full object-cover rounded-md border border-border" />
                               <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.top.name}</p>
                               <p className="text-[10px] text-muted-foreground">{pair.top.category}</p>
                             </div>
                           ) : pair.item ? (
                             <div className="text-center col-span-2">
-                              <img src={pair.item.src} alt={pair.item.name} className="h-32 w-48 mx-auto object-cover rounded-md border border-border" />
+                              <img src={pair.item.src || pair.item.image_url || pair.item.url || pair.item.image} alt={pair.item.name} className="h-32 w-48 mx-auto object-cover rounded-md border border-border" />
                               <p className="text-[11px] font-semibold mt-1">{pair.item.name}</p>
                               <p className="text-[10px] text-muted-foreground">{pair.item.category}</p>
                             </div>
@@ -559,7 +559,7 @@ function MyWardrobe() {
 
                           {pair.bottom && (
                             <div className="text-center">
-                              <img src={pair.bottom.src} alt={pair.bottom.name} className="h-28 w-full object-cover rounded-md border border-border" />
+                              <img src={pair.bottom.src || pair.bottom.image_url || pair.bottom.url || pair.bottom.image} alt={pair.bottom.name} className="h-28 w-full object-cover rounded-md border border-border" />
                               <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.bottom.name}</p>
                               <p className="text-[10px] text-muted-foreground">{pair.bottom.category}</p>
                             </div>
@@ -587,6 +587,8 @@ function MyWardrobe() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     {model2Pairs.map((pair) => {
                       const rec = getRecommendedSize(pair.catalog_item);
+                      const userImg = pair.user_item?.src || pair.user_item?.image_url || pair.user_item?.url || pair.user_item?.image;
+                      const catalogImg = pair.catalog_item?.image_url || pair.catalog_item?.image || pair.catalog_item?.url;
                       return (
                         <div key={pair.id} className="p-4 rounded-xl border border-border bg-background flex flex-col justify-between space-y-3">
                           <div className="flex items-center justify-between">
@@ -599,23 +601,23 @@ function MyWardrobe() {
                           <div className="grid grid-cols-2 gap-2 items-center bg-muted/30 p-2 rounded-lg">
                             <div className="text-center">
                               <div className="relative">
-                                <img src={pair.user_item.src} alt={pair.user_item.name} className="h-28 w-full object-cover rounded-md border border-border" />
+                                <img src={userImg} alt={pair.user_item?.name || "Your item"} className="h-28 w-full object-cover rounded-md border border-border" />
                                 <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                                   Your Item
                                 </span>
                               </div>
-                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.user_item.name}</p>
+                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.user_item?.name || "Your Item"}</p>
                             </div>
 
                             <div className="text-center">
                               <div className="relative">
-                                <img src={pair.catalog_item.image_url || pair.catalog_item.image} alt={pair.catalog_item.title} className="h-28 w-full object-cover rounded-md border border-border" />
+                                <img src={catalogImg} alt={pair.catalog_item?.title || "Catalog item"} className="h-28 w-full object-cover rounded-md border border-border" />
                                 <span className="absolute bottom-1 right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                                   Catalog
                                 </span>
                               </div>
-                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.catalog_item.title}</p>
-                              {pair.catalog_item.price && (
+                              <p className="text-[11px] font-semibold mt-1 line-clamp-1">{pair.catalog_item?.title || "Catalog Item"}</p>
+                              {pair.catalog_item?.price && (
                                 <p className="text-[10px] font-bold text-red-500">₹{pair.catalog_item.price}</p>
                               )}
                             </div>
