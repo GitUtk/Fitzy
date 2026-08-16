@@ -2,7 +2,7 @@ from app.crud.user import get_user_by_email, create_user
 from app.core.security import hash_password, verify_password, create_token
 from fastapi import HTTPException
 
-async def register_user(email: str, password: str, fullName: str, gender: str):
+async def register_user(email: str, password: str, fullName: str, gender: str, topSize: str = None, bottomSize: str = None):
     existing = await get_user_by_email(email)
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
@@ -10,11 +10,13 @@ async def register_user(email: str, password: str, fullName: str, gender: str):
         "email": email,
         "password": hash_password(password),
         "fullName": fullName,
-        "gender": gender
+        "gender": gender,
+        "topSize": topSize or "",
+        "bottomSize": bottomSize or ""
     }
 
     result = await create_user(user)
-    return {"id": str(result.inserted_id), "email": email, "fullName": fullName, "gender": gender}
+    return {"id": str(result.inserted_id), "email": email, "fullName": fullName, "gender": gender, "topSize": topSize, "bottomSize": bottomSize}
 
 
 async def login_user(email: str, password: str):

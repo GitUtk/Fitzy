@@ -1,9 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   CloudUpload,
   CheckCircle2,
   ImageIcon,
   AlertCircle,
+  Sparkles,
+  ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { DotmSquare18 } from "@/components/ui/dotm-square-18";
+import PurchaseModal from "@/components/PurchaseModal";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
@@ -34,7 +37,57 @@ const UploadSection = ({ onUploadSuccess }) => {
   const [showingOriginal, setShowingOriginal] = useState(false);
   const [tryOnProgress, setTryOnProgress] = useState(0);
   const [tryOnDisplayText, setTryOnDisplayText] = useState("");
+  const [userProfile, setUserProfile] = useState(null);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [purchaseModalProduct, setPurchaseModalProduct] = useState(null);
   const fileInputRef = useRef(null);
+
+  const fetchProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const getRecommendedSize = (item) => {
+    if (!userProfile) return null;
+    const cat = (item?.category || "").toLowerCase();
+    const isBottom = cat.includes("trouser") || cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short");
+
+    if (Array.isArray(userProfile.purchases) && userProfile.purchases.length > 0) {
+      const match = userProfile.purchases.find((p) => {
+        const pCat = (p.category || "").toLowerCase();
+        return isBottom
+          ? pCat.includes("trouser") || pCat.includes("pant") || pCat.includes("jean") || pCat.includes("bottom")
+          : pCat.includes("top") || pCat.includes("shirt") || pCat.includes("jacket");
+      });
+      if (match && match.bought_size) {
+        return { size: match.bought_size, source: "past orders" };
+      }
+    }
+
+    if (isBottom && userProfile.bottomSize) {
+      return { size: userProfile.bottomSize, source: "your profile" };
+    }
+    if (!isBottom && userProfile.topSize) {
+      return { size: userProfile.topSize, source: "your profile" };
+    }
+
+    return null;
+  };
 
   const inferCategory = (category) => {
     const normalized = (category || "").toLowerCase();
@@ -512,6 +565,7 @@ const UploadSection = ({ onUploadSuccess }) => {
                 const isSelected =
                   selectedProduct?.product_id === item?.product_id ||
                   selectedProduct?.title === item?.title;
+                const rec = getRecommendedSize(item);
 
                 return (
                   <div
@@ -537,31 +591,58 @@ const UploadSection = ({ onUploadSuccess }) => {
                             Preview image
                           </div>
                         )}
-                        {item.price !== undefined && item.price !== null && (
-                          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                            <span className="bg-background text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border shadow-sm">
-                              {typeof item.price === "number" ? `$${item.price.toFixed(2)}` : `$${item.price}`}
-                            </span>
+                        {rec && (
+                          <div className="absolute top-1.5 right-1.5 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-500/40 flex items-center gap-1 shadow">
+                            <Sparkles className="h-2.5 w-2.5 text-red-500" />
+                            <span>Size <strong className="text-red-400">{rec.size}</strong></span>
                           </div>
                         )}
                       </div>
                       <p className="mt-2 font-medium text-sm line-clamp-1">{item?.title || "Suggested piece"}</p>
-                      <p className="text-xs text-muted-foreground mb-3">{item?.category || "Fashion pick"}</p>
+                      <p className="text-xs text-muted-foreground mb-1">{item?.category || "Fashion pick"}</p>
+
+                      {rec && (
+                        <p className="text-[11px] text-red-500 font-semibold mb-2 line-clamp-1">
+                          💡 Recommended: <strong>{rec.size}</strong> ({rec.source})
+                        </p>
+                      )}
                     </div>
 
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="w-full text-xs font-semibold"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedProduct(item);
-                        handleTryOnPreview(item);
-                      }}
-                      disabled={tryOnLoading}
-                    >
-                      Try On
-                    </Button>
+                    <div className="space-y-1.5 pt-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full text-xs font-semibold"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProduct(item);
+                          handleTryOnPreview(item);
+                        }}
+                        disabled={tryOnLoading}
+                      >
+                        Try On
+                      </Button>
+
+                      {item.product_url && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs font-semibold flex items-center justify-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (item.product_url) {
+                              window.open(item.product_url, "_blank", "noopener,noreferrer");
+                            }
+                            setPurchaseModalProduct(item);
+                            setIsPurchaseModalOpen(true);
+                          }}
+                        >
+                          <span>Buy Item</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -569,14 +650,19 @@ const UploadSection = ({ onUploadSuccess }) => {
           </Card>
         )}
 
+        <PurchaseModal
+          isOpen={isPurchaseModalOpen}
+          onClose={() => setIsPurchaseModalOpen(false)}
+          product={purchaseModalProduct}
+          onPurchaseSaved={() => fetchProfile()}
+        />
+
         {success && (
           <Alert variant="success">
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>Image uploaded successfully.</AlertDescription>
           </Alert>
         )}
-
-
 
         {error && (
           <Alert variant="destructive">

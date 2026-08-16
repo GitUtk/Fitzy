@@ -15,6 +15,8 @@ function Register() {
     fullName: "",
     email: "",
     gender: "",
+    topSize: "",
+    bottomSize: "",
     password: "",
     confirmPassword: "",
   });
@@ -42,6 +44,14 @@ function Register() {
 
     if (!formData.gender) {
       newErrors.gender = "Gender is required";
+    }
+
+    if (!formData.topSize) {
+      newErrors.topSize = "Tops size is required";
+    }
+
+    if (!formData.bottomSize) {
+      newErrors.bottomSize = "Bottoms size is required";
     }
 
     if (!formData.password) {
@@ -85,6 +95,8 @@ function Register() {
             password: formData.password,
             fullName: formData.fullName,
             gender: formData.gender,
+            topSize: formData.topSize,
+            bottomSize: formData.bottomSize,
           }),
         }
       );
@@ -219,6 +231,70 @@ function Register() {
                   {errors.gender}
                 </p>
               )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="topSize" className="text-zinc-700 dark:text-zinc-300">Tops Size</Label>
+                <select
+                  id="topSize"
+                  value={formData.topSize}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      topSize: e.target.value,
+                    })
+                  }
+                  className={`h-10 w-full rounded-md border bg-transparent text-zinc-950 dark:text-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
+                    errors.topSize
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : "border-zinc-200 dark:border-zinc-800"
+                  }`}
+                >
+                  <option value="" className="bg-white dark:bg-zinc-950">Select Top Size</option>
+                  <option value="XS" className="bg-white dark:bg-zinc-950">XS</option>
+                  <option value="S" className="bg-white dark:bg-zinc-950">S</option>
+                  <option value="M" className="bg-white dark:bg-zinc-950">M</option>
+                  <option value="L" className="bg-white dark:bg-zinc-950">L</option>
+                  <option value="XL" className="bg-white dark:bg-zinc-950">XL</option>
+                </select>
+                {errors.topSize && (
+                  <p className="text-red-500 text-xs font-medium mt-1">
+                    {errors.topSize}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bottomSize" className="text-zinc-700 dark:text-zinc-300">Bottoms Size</Label>
+                <select
+                  id="bottomSize"
+                  value={formData.bottomSize}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      bottomSize: e.target.value,
+                    })
+                  }
+                  className={`h-10 w-full rounded-md border bg-transparent text-zinc-950 dark:text-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
+                    errors.bottomSize
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : "border-zinc-200 dark:border-zinc-800"
+                  }`}
+                >
+                  <option value="" className="bg-white dark:bg-zinc-950">Select Bottom Size</option>
+                  <option value="XS" className="bg-white dark:bg-zinc-950">XS</option>
+                  <option value="S" className="bg-white dark:bg-zinc-950">S</option>
+                  <option value="M" className="bg-white dark:bg-zinc-950">M</option>
+                  <option value="L" className="bg-white dark:bg-zinc-950">L</option>
+                  <option value="XL" className="bg-white dark:bg-zinc-950">XL</option>
+                </select>
+                {errors.bottomSize && (
+                  <p className="text-red-500 text-xs font-medium mt-1">
+                    {errors.bottomSize}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

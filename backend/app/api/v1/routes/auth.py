@@ -8,7 +8,14 @@ router = APIRouter()
 
 @router.post("/register")
 async def register(user: UserCreate):
-    return await register_user(user.email, user.password, user.fullName, user.gender)
+    return await register_user(
+        email=user.email,
+        password=user.password,
+        fullName=user.fullName,
+        gender=user.gender,
+        topSize=user.topSize,
+        bottomSize=user.bottomSize
+    )
 
 
 @router.post("/login")
