@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import PurchaseModal from "@/components/PurchaseModal";
 import {
   Dialog,
@@ -211,6 +212,7 @@ function mapCategory(geminiCategory) {
 
 function MyWardrobe() {
   const [items, setItems] = useState([]);
+  const [wardrobeLoading, setWardrobeLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
   const [dragOver, setDragOver] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -242,9 +244,14 @@ function MyWardrobe() {
   };
 
   useEffect(() => {
-    fetchWardrobeItems().then((fetchedItems) => {
-      setItems(fetchedItems);
-    });
+    setWardrobeLoading(true);
+    fetchWardrobeItems()
+      .then((fetchedItems) => {
+        setItems(fetchedItems);
+      })
+      .finally(() => {
+        setWardrobeLoading(false);
+      });
     fetchProfile();
   }, []);
 
@@ -412,9 +419,13 @@ function MyWardrobe() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-semibold tracking-tight">My Wardrobe</h2>
-          <p className="text-muted-foreground mt-1">
-            {items.length} item{items.length !== 1 ? "s" : ""} saved · Upload clothes to get AI outfit suggestions
-          </p>
+          {wardrobeLoading ? (
+            <Skeleton className="h-4 w-48 mt-1.5" />
+          ) : (
+            <p className="text-muted-foreground mt-1">
+              {items.length} item{items.length !== 1 ? "s" : ""} saved · Upload clothes to get AI outfit suggestions
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <Button
@@ -668,7 +679,33 @@ function MyWardrobe() {
         onPurchaseSaved={() => fetchProfile()}
       />
 
-      {items.length === 0 ? (
+      {wardrobeLoading ? (
+        <div className="space-y-6">
+          <Card className="border-2 border-dashed">
+            <CardContent className="flex items-center justify-center gap-2 py-4">
+              <Skeleton className="h-4 w-64" />
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-2 flex-wrap">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <Skeleton key={n} className="h-8 w-20 rounded-md" />
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <Card key={n} className="overflow-hidden shadow-sm">
+                <Skeleton className="aspect-square w-full" />
+                <CardContent className="p-3 space-y-2">
+                  <Skeleton className="h-3.5 w-3/4" />
+                  <Skeleton className="h-3 w-1/2 rounded-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : items.length === 0 ? (
         <Card
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -860,17 +897,7 @@ function MetadataSummary({ metadata }) {
   );
 }
 
-/** Shimmer skeleton for loading state */
-function Skeleton({ className }) {
-  return (
-    <div
-      className={cn(
-        "animate-pulse rounded-md bg-muted",
-        className
-      )}
-    />
-  );
-}
+
 
 function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categories }) {
   const [tagged, setTagged] = useState([]);
