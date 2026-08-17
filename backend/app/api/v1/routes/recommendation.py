@@ -511,3 +511,24 @@ async def generate_wardrobe_outfits(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/catalog")
+async def get_catalog(
+    gender: str = None,
+    category: str = None,
+    query: str = None,
+    limit: int = 100,
+    skip: int = 0
+):
+    try:
+        data = recommendation_service.get_catalog(
+            gender=gender,
+            category=category,
+            query=query,
+            limit=limit,
+            skip=skip
+        )
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

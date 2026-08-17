@@ -204,4 +204,83 @@ class RecommendationService:
             })
         return results
 
+    def get_catalog(self, gender: str = None, category: str = None, query: str = None, limit: int = 100, skip: int = 0) -> dict:
+        self.initialize()
+        
+        items = []
+        
+        # Load Male items if gender is Male or None/All
+        if not gender or str(gender).lower() in ["male", "men", "all"]:
+            for idx, row in self.df_labels_male.iterrows():
+                items.append({
+                    "image": row["image"],
+                    "image_url": row["image_url"] if str(row.get("image_url", "")).startswith("http") else f"/static/images/{row['image']}",
+                    "product_id": str(row["product_id"]),
+                    "title": row["title"],
+                    "color": row["color"],
+                    "fit": row["fit"],
+                    "pattern": row["pattern"],
+                    "material": row["material"],
+                    "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
+                    "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
+                    "category": row["category"],
+                    "wear_type": row.get("wear_type", ""),
+                    "product_url": row.get("product_url", "https://www.snitch.com/"),
+                    "store": "Snitch",
+                    "gender": "Men"
+                })
+
+        # Load Female items if gender is Female or None/All
+        if not gender or str(gender).lower() in ["female", "women", "all"]:
+            for idx, row in self.df_labels_female.iterrows():
+                items.append({
+                    "image": row["image"],
+                    "image_url": row["image_url"] if str(row.get("image_url", "")).startswith("http") else f"/static/images/{row['image']}",
+                    "product_id": str(row["product_id"]),
+                    "title": row["title"],
+                    "color": row["color"],
+                    "fit": row["fit"],
+                    "pattern": row["pattern"],
+                    "material": row["material"],
+                    "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
+                    "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
+                    "category": row["category"],
+                    "wear_type": row.get("wear_type", ""),
+                    "product_url": row.get("product_url", "https://newme.asia/"),
+                    "store": "Newme",
+                    "gender": "Women"
+                })
+
+        # Filter by category if specified
+        if category and category.lower() != "all":
+            cat_lower = category.lower()
+            items = [
+                it for it in items 
+                if cat_lower in (it["category"] or "").lower() or cat_lower in (it["title"] or "").lower()
+            ]
+
+        # Filter by search query if specified
+        if query and query.strip():
+            q_terms = [t.lower() for t in query.strip().split() if len(t) > 1]
+            def match_score(item):
+                searchable = f"{item['title']} {item['color']} {item['category']} {item['fit']} {item['pattern']} {item['material']} {item['store']}".lower()
+                return sum(1 for t in q_terms if t in searchable)
+            
+            items = [it for it in items if match_score(it) > 0]
+            items.sort(key=match_score, reverse=True)
+
+        total = len(items)
+        paginated_items = items[skip : skip + limit] if limit > 0 else items
+        
+        # Get unique categories available in the dataset
+        categories = list(set(it["category"] for it in items if it.get("category")))
+
+        return {
+            "success": True,
+            "total": total,
+            "categories": sorted(categories),
+            "products": paginated_items
+        }
+
 recommendation_service = RecommendationService()
+
