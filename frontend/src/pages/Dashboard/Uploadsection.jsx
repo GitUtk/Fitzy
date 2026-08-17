@@ -22,6 +22,30 @@ import PurchaseModal from "@/components/PurchaseModal";
 
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
+const resolveOutfitImageUrl = (outfit) => {
+  if (!outfit) return "";
+  const rawUrl = outfit.image_url || outfit.image || "";
+  const rawImg = outfit.image || "";
+
+  if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+    if (rawUrl.includes("cloudfront.net") && rawImg && !rawImg.startsWith("female") && rawImg.endsWith(".webp")) {
+      return `https://fitzy-coral.vercel.app/static/images/${rawImg}`;
+    }
+    return rawUrl;
+  }
+
+  if (rawImg && !rawImg.startsWith("female") && rawImg.endsWith(".webp")) {
+    return `https://fitzy-coral.vercel.app/static/images/${rawImg}`;
+  }
+
+  if (rawUrl.endsWith(".webp") && !rawUrl.includes("female")) {
+    const filename = rawUrl.split("/").pop();
+    return `https://fitzy-coral.vercel.app/static/images/${filename}`;
+  }
+
+  return rawUrl;
+};
+
 const UploadSection = ({ onUploadSuccess }) => {
   const location = useLocation();
 
@@ -203,7 +227,8 @@ const UploadSection = ({ onUploadSuccess }) => {
 
       const photoFile = fileInputRef.current?.files?.[0];
       const formData = new FormData();
-      formData.append("garment_url", productToTry.image_url || productToTry.image || productToTry.product_url || "");
+      const resolvedGarmentUrl = resolveOutfitImageUrl(productToTry) || productToTry.image_url || productToTry.image || productToTry.product_url || "";
+      formData.append("garment_url", resolvedGarmentUrl);
       formData.append("category", inferCategory(productToTry?.category));
       if (photoFile) {
         formData.append("file", photoFile);
@@ -444,9 +469,15 @@ const UploadSection = ({ onUploadSuccess }) => {
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
             <div className="flex items-center gap-3.5 w-full sm:w-auto">
               <img
-                src={exploreOutfit.image_url || exploreOutfit.image}
-                alt={exploreOutfit.title}
+                src={resolveOutfitImageUrl(exploreOutfit)}
+                alt={exploreOutfit.title || "Selected Outfit"}
                 className="h-16 w-16 object-cover rounded-lg border border-border bg-muted shrink-0"
+                onError={(e) => {
+                  const imgName = exploreOutfit.image || (exploreOutfit.image_url ? exploreOutfit.image_url.split("/").pop() : "");
+                  if (imgName && !imgName.startsWith("female") && imgName.endsWith(".webp")) {
+                    e.currentTarget.src = `https://fitzy-coral.vercel.app/static/images/${imgName}`;
+                  }
+                }}
               />
               <div>
                 <div className="flex items-center gap-2">

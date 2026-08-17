@@ -14,6 +14,11 @@ class RecommendationService:
         # Female dataset
         self.df_labels_female = None
         self.db_embeddings_norm_female = None
+
+        # Pre-cached catalog lists
+        self.male_catalog = None
+        self.female_catalog = None
+        self.all_catalog = None
         
         self.ort_session = None
         self.initialized = False
@@ -65,6 +70,53 @@ class RecommendationService:
         norms_female = np.where(norms_female == 0, 1e-10, norms_female)
         self.db_embeddings_norm_female = db_embeddings_female / norms_female
 
+        # Pre-build male catalog items
+        male_items = []
+        for idx, row in self.df_labels_male.iterrows():
+            img_filename = str(row["image"]).strip()
+            male_img_url = f"https://fitzy-coral.vercel.app/static/images/{img_filename}"
+            male_items.append({
+                "image": img_filename,
+                "image_url": male_img_url,
+                "product_id": str(row["product_id"]),
+                "title": row["title"],
+                "color": row["color"],
+                "fit": row["fit"],
+                "pattern": row["pattern"],
+                "material": row["material"],
+                "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
+                "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
+                "category": row["category"],
+                "wear_type": row.get("wear_type", ""),
+                "product_url": row.get("product_url", "https://www.snitch.com/"),
+                "store": "Snitch",
+                "gender": "Men"
+            })
+        self.male_catalog = male_items
+
+        # Pre-build female catalog items
+        female_items = []
+        for idx, row in self.df_labels_female.iterrows():
+            female_items.append({
+                "image": row["image"],
+                "image_url": row["image_url"] if str(row.get("image_url", "")).startswith("http") else f"/static/images/{row['image']}",
+                "product_id": str(row["product_id"]),
+                "title": row["title"],
+                "color": row["color"],
+                "fit": row["fit"],
+                "pattern": row["pattern"],
+                "material": row["material"],
+                "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
+                "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
+                "category": row["category"],
+                "wear_type": row.get("wear_type", ""),
+                "product_url": row.get("product_url", "https://newme.asia/"),
+                "store": "Newme",
+                "gender": "Women"
+            })
+        self.female_catalog = female_items
+        self.all_catalog = self.male_catalog + self.female_catalog
+
         # Initialize CPU-optimized ONNX runtime session with single thread to minimize RAM usage
         sess_options = ort.SessionOptions()
         sess_options.intra_op_num_threads = 1
@@ -106,18 +158,19 @@ class RecommendationService:
         img_data = np.expand_dims(img_data, axis=0)
         return img_data
 
+    def extract_features(self, image_bytes: bytes) -> np.ndarray:
+        self.initialize()
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        input_data = self.preprocess_image(image)
+        input_name = self.ort_session.get_inputs()[0].name
+        output_name = self.ort_session.get_outputs()[0].name
+        features = self.ort_session.run([output_name], {input_name: input_data})[0]
+        return features.flatten()
+
     def find_similar(self, file_bytes: bytes, gender: str = None, top_k: int = 6):
         self.initialize()
 
-        image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
-        img_data = self.preprocess_image(image)
-
-        # Run ONNX inference
-        inputs = {self.ort_session.get_inputs()[0].name: img_data}
-        outputs = self.ort_session.run(None, inputs)
-        
-        # ResNet50 feature extractor output shape is [1, 2048, 1, 1], squeeze it to 2048
-        query_embedding = np.squeeze(outputs[0])
+        query_embedding = self.extract_features(file_bytes)
 
         query_norm = np.linalg.norm(query_embedding)
         if query_norm == 0:
@@ -137,11 +190,14 @@ class RecommendationService:
         for idx in top_k_indices:
             row = df_labels.iloc[idx]
             similarity_score = float(similarities[idx])
+            img_filename = str(row["image"]).strip()
+            is_male_img = not is_female and img_filename and not img_filename.startswith("female")
+            img_url = f"https://fitzy-coral.vercel.app/static/images/{img_filename}" if is_male_img else f"/static/images/{row['image']}"
 
             results.append({
                 "rank": len(results) + 1,
                 "image": row["image"],
-                "image_url": f"/static/images/{row['image']}",
+                "image_url": img_url,
                 "product_id": str(row["product_id"]),
                 "title": row["title"],
                 "color": row["color"],
@@ -187,9 +243,12 @@ class RecommendationService:
         results = []
         for idx in top_indices:
             row = df_labels.iloc[idx]
+            img_filename = str(row["image"]).strip()
+            is_male_img = not is_female and img_filename and not img_filename.startswith("female")
+            img_url = f"https://fitzy-coral.vercel.app/static/images/{img_filename}" if is_male_img else f"/static/images/{row['image']}"
             results.append({
                 "image": row["image"],
-                "image_url": f"/static/images/{row['image']}",
+                "image_url": img_url,
                 "product_id": str(row["product_id"]),
                 "title": row["title"],
                 "color": row["color"],
@@ -207,49 +266,14 @@ class RecommendationService:
     def get_catalog(self, gender: str = None, category: str = None, query: str = None, limit: int = 100, skip: int = 0) -> dict:
         self.initialize()
         
-        items = []
+        g_norm = str(gender).strip().lower() if gender and str(gender).strip().lower() != "all" else ""
         
-        # Load Male items if gender is Male or None/All
-        if not gender or str(gender).lower() in ["male", "men", "all"]:
-            for idx, row in self.df_labels_male.iterrows():
-                items.append({
-                    "image": row["image"],
-                    "image_url": row["image_url"] if str(row.get("image_url", "")).startswith("http") else f"/static/images/{row['image']}",
-                    "product_id": str(row["product_id"]),
-                    "title": row["title"],
-                    "color": row["color"],
-                    "fit": row["fit"],
-                    "pattern": row["pattern"],
-                    "material": row["material"],
-                    "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
-                    "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
-                    "category": row["category"],
-                    "wear_type": row.get("wear_type", ""),
-                    "product_url": row.get("product_url", "https://www.snitch.com/"),
-                    "store": "Snitch",
-                    "gender": "Men"
-                })
-
-        # Load Female items if gender is Female or None/All
-        if not gender or str(gender).lower() in ["female", "women", "all"]:
-            for idx, row in self.df_labels_female.iterrows():
-                items.append({
-                    "image": row["image"],
-                    "image_url": row["image_url"] if str(row.get("image_url", "")).startswith("http") else f"/static/images/{row['image']}",
-                    "product_id": str(row["product_id"]),
-                    "title": row["title"],
-                    "color": row["color"],
-                    "fit": row["fit"],
-                    "pattern": row["pattern"],
-                    "material": row["material"],
-                    "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
-                    "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
-                    "category": row["category"],
-                    "wear_type": row.get("wear_type", ""),
-                    "product_url": row.get("product_url", "https://newme.asia/"),
-                    "store": "Newme",
-                    "gender": "Women"
-                })
+        if g_norm in ["male", "men", "snitch"]:
+            items = self.male_catalog
+        elif g_norm in ["female", "women", "newme"]:
+            items = self.female_catalog
+        else:
+            items = self.all_catalog
 
         # Filter by category if specified
         if category and category.lower() != "all":
@@ -263,16 +287,17 @@ class RecommendationService:
         if query and query.strip():
             q_terms = [t.lower() for t in query.strip().split() if len(t) > 1]
             def match_score(item):
-                searchable = f"{item['title']} {item['color']} {item['category']} {item['fit']} {item['pattern']} {item['material']} {item['store']}".lower()
+                searchable = f"{item['title']} {item['color']} {item['category']} {item['fit']} {item['pattern']} {item['material']} {item['store']} {item['gender']}".lower()
                 return sum(1 for t in q_terms if t in searchable)
             
             items = [it for it in items if match_score(it) > 0]
             items.sort(key=match_score, reverse=True)
 
         total = len(items)
-        paginated_items = items[skip : skip + limit] if limit > 0 else items
+        skip_val = max(0, int(skip))
+        limit_val = max(1, int(limit)) if limit > 0 else 100
+        paginated_items = items[skip_val : skip_val + limit_val]
         
-        # Get unique categories available in the dataset
         categories = list(set(it["category"] for it in items if it.get("category")))
 
         return {

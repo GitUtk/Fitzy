@@ -19,8 +19,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Sidebar from "../Dashboard/Sidebar";
 
-const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
-// const API_BASE_URL = "http://127.0.0.1:8000/api/v1";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ? "http://127.0.0.1:8000/api/v1"
+    : "https://fitzy-f7uv.onrender.com/api/v1");
 
 const CATEGORIES = [
   "All",
@@ -43,11 +46,14 @@ function Explore() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters
+  // Filters & Pagination
   const [selectedGender, setSelectedGender] = useState("All");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [savedProductIds, setSavedProductIds] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const itemsPerPage = 20;
 
   // Modal Detail State
   const [selectedProductModal, setSelectedProductModal] = useState(null);
@@ -65,7 +71,9 @@ function Explore() {
       if (selectedGender !== "All") params.append("gender", selectedGender);
       if (selectedCategory !== "All") params.append("category", selectedCategory);
       if (searchQuery.trim()) params.append("query", searchQuery.trim());
-      params.append("limit", "120");
+      const skip = (currentPage - 1) * itemsPerPage;
+      params.append("skip", skip.toString());
+      params.append("limit", itemsPerPage.toString());
 
       const response = await fetch(`${API_BASE_URL}/recommendations/catalog?${params.toString()}`);
       if (!response.ok) {
@@ -73,9 +81,19 @@ function Explore() {
       }
 
       const data = await response.json();
-      setProducts(data.products || []);
+      let rawProducts = data.products || [];
+
+      // Defensive client-side filter by selectedGender to ensure 100% strictness
+      if (selectedGender === "Men") {
+        rawProducts = rawProducts.filter((p) => p.store === "Snitch" || p.gender === "Men");
+      } else if (selectedGender === "Women") {
+        rawProducts = rawProducts.filter((p) => p.store === "Newme" || p.gender === "Women");
+      }
+
+      setProducts(rawProducts);
+      setTotalProducts(data.total || rawProducts.length);
+
       if (data.categories && data.categories.length > 0) {
-        // Merge with existing predefined list to ensure consistency
         const merged = Array.from(new Set(["All", ...data.categories, ...CATEGORIES]));
         setCategories(merged);
       }
@@ -89,10 +107,21 @@ function Explore() {
 
   useEffect(() => {
     fetchCatalog();
-  }, [selectedGender, selectedCategory]);
+  }, [selectedGender, selectedCategory, currentPage]);
+
+  const handleGenderChange = (g) => {
+    setSelectedGender(g);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    setCurrentPage(1);
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     fetchCatalog();
   };
 
@@ -111,7 +140,6 @@ function Explore() {
 
   const handleTryOutfit = (product) => {
     const token = localStorage.getItem("token");
-    // Store in sessionStorage to ensure state survives across authentication (login/signup)
     if (product) {
       sessionStorage.setItem("pendingOutfit", JSON.stringify(product));
     }
@@ -130,6 +158,8 @@ function Explore() {
       }
     });
   };
+
+  const totalPages = Math.max(1, Math.ceil(totalProducts / itemsPerPage));
 
   return (
     <div className="h-screen bg-background overflow-hidden flex">
@@ -185,7 +215,7 @@ function Explore() {
                   <button
                     key={g}
                     type="button"
-                    onClick={() => setSelectedGender(g)}
+                    onClick={() => handleGenderChange(g)}
                     className={cn(
                       "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
                       selectedGender === g
@@ -205,7 +235,7 @@ function Explore() {
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => handleCategoryChange(cat)}
                   className={cn(
                     "px-3.5 py-1.5 text-xs font-medium rounded-full border whitespace-nowrap transition-all shrink-0",
                     selectedCategory === cat
@@ -282,6 +312,11 @@ function Explore() {
                           alt={product.title}
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           loading="lazy"
+                          onError={(e) => {
+                            if (product.image && !product.image.startsWith("female")) {
+                              e.currentTarget.src = `https://fitzy-coral.vercel.app/static/images/${product.image}`;
+                            }
+                          }}
                         />
 
                         {/* Store Badge */}
@@ -352,6 +387,38 @@ function Explore() {
               })}
             </div>
           )}
+
+          {/* Pagination Controls */}
+          {!loading && !error && products.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between border-t border-border pt-6 mt-8 gap-4">
+              <p className="text-xs text-muted-foreground font-medium">
+                Showing {products.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, totalProducts)} of {totalProducts} items
+              </p>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  className="text-xs font-semibold h-9 px-3.5"
+                >
+                  Previous
+                </Button>
+                <span className="text-xs font-semibold text-muted-foreground px-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  className="text-xs font-semibold h-9 px-3.5"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
@@ -394,6 +461,11 @@ function Explore() {
                   src={selectedProductModal.image_url}
                   alt={selectedProductModal.title}
                   className="h-full w-full object-contain"
+                  onError={(e) => {
+                    if (selectedProductModal.image && !selectedProductModal.image.startsWith("female")) {
+                      e.currentTarget.src = `https://fitzy-coral.vercel.app/static/images/${selectedProductModal.image}`;
+                    }
+                  }}
                 />
               </div>
 
