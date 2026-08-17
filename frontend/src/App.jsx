@@ -32,6 +32,7 @@ import Dashboard, {
 } from "./pages/Dashboard/Dashboard";
 import StyleStudio from "./pages/StyleStudio/StyleStudio";
 import ProfileSetup from "./pages/ProfileSetup/ProfileSetup";
+import Explore from "./pages/Explore/Explore";
 
 function App() {
   return (
@@ -40,8 +41,10 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/profile-setup" element={<ProfileSetup />} />
+      <Route path="/explore" element={<Explore />} />
       <Route path="/dashboard" element={<Dashboard />}>
         <Route index element={<DashboardHome />} />
+        <Route path="explore" element={<Explore />} />
         <Route path="my-looks" element={<DashboardLooks />} />
         <Route path="my-wardrobe" element={<DashboardWardrobe />} />
         <Route path="profile" element={<DashboardProfile />} />

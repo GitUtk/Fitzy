@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { DotmSquare18 } from "@/components/ui/dotm-square-18";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [form, setForm] = useState({
     email: "",
@@ -20,10 +21,36 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
 
+  const getPendingOutfit = () => {
+    if (location.state?.selectedOutfit) {
+      return location.state.selectedOutfit;
+    }
+    const saved = sessionStorage.getItem("pendingOutfit");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        sessionStorage.removeItem("pendingOutfit");
+        return parsed;
+      } catch {
+        sessionStorage.removeItem("pendingOutfit");
+      }
+    }
+    return null;
+  };
+
+  const redirectAfterAuth = () => {
+    const pendingOutfit = getPendingOutfit();
+    if (pendingOutfit) {
+      navigate("/dashboard", { state: { selectedOutfit: pendingOutfit } });
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      navigate("/dashboard");
+      redirectAfterAuth();
     }
   }, [navigate]);
 
@@ -79,7 +106,7 @@ function Login() {
 
       if (response.ok) {
         localStorage.setItem("token", data.access_token);
-        navigate("/dashboard");
+        redirectAfterAuth();
       } else {
         setApiError(data.detail || "Invalid email or password");
       }

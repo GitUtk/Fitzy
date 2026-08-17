@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { DotmSquare18 } from "@/components/ui/dotm-square-18";
 
 function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -24,6 +25,32 @@ function Register() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+
+  const getPendingOutfit = () => {
+    if (location.state?.selectedOutfit) {
+      return location.state.selectedOutfit;
+    }
+    const saved = sessionStorage.getItem("pendingOutfit");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        sessionStorage.removeItem("pendingOutfit");
+        return parsed;
+      } catch {
+        sessionStorage.removeItem("pendingOutfit");
+      }
+    }
+    return null;
+  };
+
+  const redirectAfterAuth = () => {
+    const pendingOutfit = getPendingOutfit();
+    if (pendingOutfit) {
+      navigate("/dashboard", { state: { selectedOutfit: pendingOutfit } });
+    } else {
+      navigate("/dashboard");
+    }
+  };
 
   const validate = () => {
     let newErrors = {};
@@ -123,7 +150,7 @@ function Register() {
 
         if (loginResponse.ok) {
           localStorage.setItem("token", loginData.access_token);
-          navigate("/dashboard");
+          redirectAfterAuth();
         } else {
           setApiError("Registration succeeded, but auto-login failed. Please login manually.");
         }

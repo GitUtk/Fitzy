@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   CloudUpload,
   CheckCircle2,
   ImageIcon,
   AlertCircle,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  X,
+  Shirt
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,6 +23,24 @@ import PurchaseModal from "@/components/PurchaseModal";
 const API_BASE_URL = "https://fitzy-f7uv.onrender.com/api/v1";
 
 const UploadSection = ({ onUploadSuccess }) => {
+  const location = useLocation();
+
+  const getInitialExploreOutfit = () => {
+    if (location.state?.selectedOutfit) {
+      return location.state.selectedOutfit;
+    }
+    const saved = sessionStorage.getItem("pendingOutfit");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        sessionStorage.removeItem("pendingOutfit");
+      }
+    }
+    return null;
+  };
+
+  const [exploreOutfit, setExploreOutfit] = useState(() => getInitialExploreOutfit());
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +50,7 @@ const UploadSection = ({ onUploadSuccess }) => {
   const [prompt, setPrompt] = useState("");
   const [styleLoading, setStyleLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(() => getInitialExploreOutfit());
   const [showTryOn, setShowTryOn] = useState(false);
   const [tryOnLoading, setTryOnLoading] = useState(false);
   const [tryOnImageUrl, setTryOnImageUrl] = useState("");
@@ -41,6 +62,15 @@ const UploadSection = ({ onUploadSuccess }) => {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [purchaseModalProduct, setPurchaseModalProduct] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const outfit = location.state?.selectedOutfit || getInitialExploreOutfit();
+    if (outfit) {
+      setExploreOutfit(outfit);
+      setSelectedProduct(outfit);
+      sessionStorage.removeItem("pendingOutfit");
+    }
+  }, [location.state]);
 
   const fetchProfile = async () => {
     const token = localStorage.getItem("token");
@@ -404,12 +434,69 @@ const UploadSection = ({ onUploadSuccess }) => {
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl font-extrabold text-red-600 dark:text-red-500">Virtual Try-On</CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm text-muted-foreground">
           Upload your photo, describe the outfit you want, and preview clothing options instantly.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {exploreOutfit && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+            <div className="flex items-center gap-3.5 w-full sm:w-auto">
+              <img
+                src={exploreOutfit.image_url || exploreOutfit.image}
+                alt={exploreOutfit.title}
+                className="h-16 w-16 object-cover rounded-lg border border-border bg-muted shrink-0"
+              />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-red-600 text-white uppercase tracking-wider">
+                    Selected Outfit for Try-On
+                  </span>
+                  {exploreOutfit.store && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                      {exploreOutfit.store}
+                    </span>
+                  )}
+                </div>
+                <h4 className="font-bold text-sm text-foreground mt-1 line-clamp-1">
+                  {exploreOutfit.title}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  {exploreOutfit.category} • ₹{exploreOutfit.price ? exploreOutfit.price.toLocaleString("en-IN") : "999"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+              {preview && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleTryOnPreview(exploreOutfit)}
+                  disabled={tryOnLoading}
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 flex items-center gap-1.5 shadow-sm"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Try On Now</span>
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground p-2"
+                onClick={() => {
+                  setExploreOutfit(null);
+                  setSelectedProduct(null);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div
           onDragEnter={handleDrag}
           onDragOver={handleDrag}
@@ -528,6 +615,18 @@ const UploadSection = ({ onUploadSuccess }) => {
             </div>
           )}
         </div>
+
+        {exploreOutfit && preview && (
+          <Button
+            type="button"
+            onClick={() => handleTryOnPreview(exploreOutfit)}
+            disabled={tryOnLoading}
+            className="w-full h-11 text-sm font-bold bg-red-600 hover:bg-red-700 text-white shadow-md flex items-center justify-center gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Try On "{exploreOutfit.title}" Now</span>
+          </Button>
+        )}
 
         <div className="space-y-3">
           <Label htmlFor="outfit-prompt">Describe the outfit you want</Label>

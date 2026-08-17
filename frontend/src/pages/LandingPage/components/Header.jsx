@@ -51,6 +51,19 @@ export default function Header({ theme, toggleTheme, isDark }) {
           {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
+        {/* Explore Button */}
+        <Link to="/explore">
+          <Button
+            variant="ghost"
+            className={`rounded-full text-sm px-5 py-2 font-medium transition-colors duration-500 flex items-center gap-1.5 ${
+              isDark ? "text-white/80 hover:text-white hover:bg-white/10" : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+            }`}
+          >
+            <Sparkles className="h-4 w-4 text-red-500" />
+            <span>Explore</span>
+          </Button>
+        </Link>
+
         <Link to="/login">
           <Button
             variant="ghost"

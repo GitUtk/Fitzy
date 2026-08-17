@@ -38,6 +38,19 @@ function Dashboard() {
   };
 
   useEffect(() => {
+    // Check if user performed a real browser reload while active on /dashboard
+    const navEntries = performance.getEntriesByType("navigation");
+    const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+    const wasActive = sessionStorage.getItem("dashboard_active") === "true";
+
+    if (isReload && wasActive) {
+      sessionStorage.removeItem("dashboard_active");
+      navigate("/explore", { replace: true });
+      return;
+    }
+
+    sessionStorage.setItem("dashboard_active", "true");
+
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -74,6 +87,7 @@ function Dashboard() {
   }, [navigate]);
 
   const handleLogout = () => {
+    sessionStorage.removeItem("dashboard_active");
     localStorage.removeItem("token");
     navigate("/login");
   };
@@ -112,11 +126,11 @@ export function DashboardHome() {
     <div className="max-w-7xl mx-auto space-y-6">
       <Card className="bg-card shadow-none border-0">
         <CardContent className="flex flex-col gap-4 p-0 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <h3 className="font-display text-2xl font-extrabold tracking-tight text-red-600 dark:text-red-500">
               Welcome, {userFirstName}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-normal">
               Ready to pick up where you left off?
             </p>
           </div>

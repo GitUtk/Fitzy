@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
+  Compass,
   Sparkles,
   Heart,
   Shirt,
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { path: "/dashboard", icon: Home, label: "Dashboard" },
+  { path: "/explore", icon: Compass, label: "Explore" },
   { path: "/style-studio", icon: Sparkles, label: "Style Studio" },
   { path: "/dashboard/my-looks", icon: Heart, label: "My Looks" },
   { path: "/dashboard/my-wardrobe", icon: Shirt, label: "My Wardrobe" },
@@ -78,12 +80,15 @@ function Sidebar({ handleLogout }) {
               key={item.path}
               variant={isActive ? "secondary" : "ghost"}
               className={
-                `w-full justify-start gap-3 h-10 px-3 font-normal transition-all duration-200 ` +
+                `w-full justify-start gap-3 h-10 px-3 text-sm font-normal transition-all duration-200 ` +
                 (isActive 
                   ? "bg-red-500/10 text-red-600 dark:text-red-400 font-semibold border-l-2 border-red-500 rounded-l-none" 
                   : "hover:text-red-500 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-400")
               }
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                sessionStorage.removeItem("dashboard_active");
+                navigate(item.path);
+              }}
             >
               <Icon className="h-4 w-4 shrink-0" />
               {item.label}
@@ -95,7 +100,7 @@ function Sidebar({ handleLogout }) {
       <div className="p-4 space-y-3">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 h-10 px-3 font-normal text-muted-foreground hover:text-foreground"
+          className="w-full justify-start gap-3 h-10 px-3 text-sm font-normal text-muted-foreground hover:text-foreground"
           onClick={toggleTheme}
         >
           {theme === "dark" ? (
@@ -114,7 +119,10 @@ function Sidebar({ handleLogout }) {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={handleLogout}
+          onClick={() => {
+            sessionStorage.removeItem("dashboard_active");
+            handleLogout();
+          }}
         >
           <LogOut className="h-4 w-4" />
           Logout
