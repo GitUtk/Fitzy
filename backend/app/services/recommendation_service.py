@@ -75,10 +75,24 @@ class RecommendationService:
         for idx, row in self.df_labels_male.iterrows():
             img_filename = str(row["image"]).strip()
             male_img_url = f"https://fitzy-coral.vercel.app/static/images/{img_filename}"
+            cat_lower = str(row["category"]).lower()
+            pid = str(row["product_id"])
+            pid_hash = sum(ord(c) for c in pid)
+            if any(b in cat_lower for b in ["pant", "trouser", "jean", "bottom", "short"]):
+                item_sizes = ["28", "30", "32", "34", "36"]
+                single_size = item_sizes[pid_hash % len(item_sizes)]
+            elif any(b in cat_lower for b in ["shoe", "footwear", "sneaker"]):
+                item_sizes = ["UK 6", "UK 7", "UK 8", "UK 9", "UK 10"]
+                single_size = item_sizes[pid_hash % len(item_sizes)]
+            else:
+                item_sizes = ["S", "M", "L", "XL", "XXL"]
+                top_opts = ["S", "M", "L", "XL"]
+                single_size = top_opts[pid_hash % len(top_opts)]
+
             male_items.append({
                 "image": img_filename,
                 "image_url": male_img_url,
-                "product_id": str(row["product_id"]),
+                "product_id": pid,
                 "title": row["title"],
                 "color": row["color"],
                 "fit": row["fit"],
@@ -87,6 +101,8 @@ class RecommendationService:
                 "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
                 "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
                 "category": row["category"],
+                "size": single_size,
+                "sizes": item_sizes,
                 "wear_type": row.get("wear_type", ""),
                 "product_url": row.get("product_url", "https://www.snitch.com/"),
                 "store": "Snitch",
@@ -97,10 +113,24 @@ class RecommendationService:
         # Pre-build female catalog items
         female_items = []
         for idx, row in self.df_labels_female.iterrows():
+            cat_lower = str(row["category"]).lower()
+            pid = str(row["product_id"])
+            pid_hash = sum(ord(c) for c in pid)
+            if any(b in cat_lower for b in ["pant", "trouser", "jean", "bottom", "short"]):
+                item_sizes = ["26", "28", "30", "32", "34"]
+                single_size = item_sizes[pid_hash % len(item_sizes)]
+            elif any(b in cat_lower for b in ["shoe", "footwear", "sneaker"]):
+                item_sizes = ["UK 3", "UK 4", "UK 5", "UK 6", "UK 7"]
+                single_size = item_sizes[pid_hash % len(item_sizes)]
+            else:
+                item_sizes = ["XS", "S", "M", "L", "XL"]
+                top_opts = ["XS", "S", "M", "L"]
+                single_size = top_opts[pid_hash % len(top_opts)]
+
             female_items.append({
                 "image": row["image"],
                 "image_url": row["image_url"] if str(row.get("image_url", "")).startswith("http") else f"/static/images/{row['image']}",
-                "product_id": str(row["product_id"]),
+                "product_id": pid,
                 "title": row["title"],
                 "color": row["color"],
                 "fit": row["fit"],
@@ -109,6 +139,8 @@ class RecommendationService:
                 "price": float(row["price"]) if row["price"] != "" and pd.notna(row["price"]) else 999.0,
                 "rating": float(row["rating"]) if row["rating"] != "" and pd.notna(row["rating"]) else 4.5,
                 "category": row["category"],
+                "size": single_size,
+                "sizes": item_sizes,
                 "wear_type": row.get("wear_type", ""),
                 "product_url": row.get("product_url", "https://newme.asia/"),
                 "store": "Newme",

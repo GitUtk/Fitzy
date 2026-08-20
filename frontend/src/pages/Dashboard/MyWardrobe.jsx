@@ -64,6 +64,8 @@ const CATEGORY_MAP = {
   Swimwear: "Tops",
 };
 
+
+
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Accessories"];
 const UPLOAD_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
 
@@ -205,9 +207,17 @@ async function deleteWardrobeItem(id) {
 
 /** Map a Gemini category string to one of our wardrobe categories */
 function mapCategory(geminiCategory) {
-  if (!geminiCategory) return "";
+  if (!geminiCategory) return "Tops";
   if (UPLOAD_CATEGORIES.includes(geminiCategory)) return geminiCategory;
-  return CATEGORY_MAP[geminiCategory] ?? "";
+  if (CATEGORY_MAP[geminiCategory]) return CATEGORY_MAP[geminiCategory];
+
+  const name = String(geminiCategory).toLowerCase();
+  if (name.includes("pant") || name.includes("jean") || name.includes("trouser") || name.includes("short") || name.includes("skirt")) return "Bottoms";
+  if (name.includes("dress") || name.includes("gown")) return "Dresses";
+  if (name.includes("jacket") || name.includes("coat") || name.includes("blazer") || name.includes("outerwear")) return "Outerwear";
+  if (name.includes("shoe") || name.includes("sneaker") || name.includes("boot") || name.includes("footwear")) return "Shoes";
+  if (name.includes("bag") || name.includes("hat") || name.includes("belt") || name.includes("accessory")) return "Accessories";
+  return "Tops";
 }
 
 function MyWardrobe() {
@@ -280,8 +290,25 @@ function MyWardrobe() {
     }
   };
 
+  const getDetectedSize = (item, profile = userProfile) => {
+    if (!item) return "M";
+    const cat = (item.category || "").toLowerCase();
+    const isBottom = cat.includes("trouser") || cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short");
+    const isShoe = cat.includes("shoe") || cat.includes("footwear") || cat.includes("sneaker");
+
+    if (isBottom) {
+      if (profile?.bottomSize) return String(profile.bottomSize).toUpperCase();
+      return "32";
+    }
+    if (isShoe) {
+      return "UK 8";
+    }
+    if (profile?.topSize) return String(profile.topSize).toUpperCase();
+    return "M";
+  };
+
   const getRecommendedSize = (item) => {
-    if (!userProfile) return null;
+    if (!userProfile) return { size: getDetectedSize(item, userProfile), source: "your profile" };
     const cat = (item?.category || "").toLowerCase();
     const isBottom = cat.includes("trouser") || cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short");
 
@@ -298,13 +325,13 @@ function MyWardrobe() {
     }
 
     if (isBottom && userProfile.bottomSize) {
-      return { size: userProfile.bottomSize, source: "your profile" };
+      return { size: String(userProfile.bottomSize).toUpperCase(), source: "your profile" };
     }
     if (!isBottom && userProfile.topSize) {
-      return { size: userProfile.topSize, source: "your profile" };
+      return { size: String(userProfile.topSize).toUpperCase(), source: "your profile" };
     }
 
-    return null;
+    return { size: getDetectedSize(item, userProfile), source: "default fit" };
   };
 
   const processFiles = (files) => {
@@ -777,6 +804,7 @@ function MyWardrobe() {
                   item={item}
                   onDelete={handleDelete}
                   onClick={() => setSelectedItem(item)}
+                  userProfile={userProfile}
                 />
               ))}
             </div>
@@ -790,6 +818,7 @@ function MyWardrobe() {
         setPendingItems={setPendingItems}
         onConfirm={handleConfirmPending}
         categories={UPLOAD_CATEGORIES}
+        userProfile={userProfile}
       />
 
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
@@ -821,6 +850,13 @@ function MyWardrobe() {
                         </Button>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-between text-xs">
+                    <span className="font-medium text-muted-foreground">Profile Detected Size:</span>
+                    <span className="font-extrabold text-red-600 dark:text-red-400 text-sm">
+                      Size {getDetectedSize(selectedItem, userProfile)}
+                    </span>
                   </div>
 
                   {selectedItem.metadata && (
@@ -899,13 +935,27 @@ function MetadataSummary({ metadata }) {
 
 
 
-function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categories }) {
+function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categories, userProfile }) {
   const [tagged, setTagged] = useState([]);
+
+  const getProfileSizeForCategory = (cat, profile = userProfile) => {
+    const c = (cat || "").toLowerCase();
+    if (c.includes("bottom")) return profile?.bottomSize ? String(profile.bottomSize).toUpperCase() : "32";
+    if (c.includes("shoe")) return "UK 8";
+    return profile?.topSize ? String(profile.topSize).toUpperCase() : "M";
+  };
 
   // Initialise tagged state when modal opens
   useEffect(() => {
     if (open) {
-      setTagged(pendingItems.map((item) => ({ ...item })));
+      setTagged(pendingItems.map((item) => {
+        const autoCat = item.category || mapCategory(item.name);
+        return {
+          ...item,
+          category: autoCat,
+          editSize: getProfileSizeForCategory(autoCat, userProfile)
+        };
+      }));
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -916,26 +966,23 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
       prev.map((t) => {
         const updated = pendingItems.find((p) => p.id === t.id);
         if (!updated) return t;
-        // Only apply metadata if we just finished extracting (transition: true -> false)
         const justFinished = t.extracting && !updated.extracting;
+        const resolvedCategory = t.category || mapCategory(updated.metadata?.category || updated.metadata?.subcategory || updated.name) || "Tops";
         return {
           ...t,
           extracting: updated.extracting,
-          // Pull in metadata only when extraction just completed
           metadata: justFinished
             ? updated.metadata
             : t.metadata,
-          // Auto-fill editable fields only on first arrival, user edits take priority
           name: justFinished && updated.metadata?.subcategory && t.name === (t._originalName ?? t.name)
-            ? t.name  // keep file name, subcategory is just a label
+            ? t.name
             : t.name,
-          category:
-            t.category === "" && updated.category ? updated.category : t.category,
-          // Editable metadata fields — prefill from AI if user hasn't touched them
+          category: resolvedCategory,
           editColor:   justFinished && !t.editColor   ? (updated.metadata?.primaryColor ?? "")   : (t.editColor ?? ""),
           editPattern: justFinished && !t.editPattern ? (updated.metadata?.pattern ?? "")        : (t.editPattern ?? ""),
           editMaterial:justFinished && !t.editMaterial? (updated.metadata?.material ?? "")       : (t.editMaterial ?? ""),
           editFit:     justFinished && !t.editFit     ? (updated.metadata?.fit ?? "")            : (t.editFit ?? ""),
+          editSize:    justFinished && !t.editSize    ? getProfileSizeForCategory(resolvedCategory, userProfile) : (t.editSize ?? getProfileSizeForCategory(resolvedCategory, userProfile)),
         };
       })
     );
@@ -947,15 +994,23 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
     );
   };
 
-  const setCategory = (id, category) => updateField(id, "category", category);
+  const setCategory = (id, category) => {
+    setTagged((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const newSize = getProfileSizeForCategory(category, userProfile);
+        return { ...item, category, editSize: newSize };
+      })
+    );
+  };
 
   const allTagged = tagged.every((item) => item.category !== "");
   const anyExtracting = tagged.some((item) => item.extracting);
 
   const handleSave = () => {
-    // Merge edited fields back into metadata before confirming
     const final = tagged.map((item) => ({
       ...item,
+      size: item.editSize || getProfileSizeForCategory(item.category, userProfile),
       metadata: item.metadata
         ? {
             ...item.metadata,
@@ -963,8 +1018,11 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
             pattern:      item.editPattern  || item.metadata.pattern,
             material:     item.editMaterial || item.metadata.material,
             fit:          item.editFit      || item.metadata.fit,
+            size:         item.editSize     || getProfileSizeForCategory(item.category, userProfile),
           }
-        : null,
+        : {
+            size: item.editSize || getProfileSizeForCategory(item.category, userProfile)
+          },
     }));
     onConfirm(final);
   };
@@ -1030,9 +1088,7 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
                       className="h-8 text-sm"
                       placeholder="e.g. White Linen Shirt"
                     />
-                  </div>
-
-                  {/* Metadata fields — skeleton while loading, editable after */}
+                                {/* Metadata fields — skeleton while loading, editable after */}
                   <div className="grid grid-cols-2 gap-2">
                     {/* Color */}
                     <div>
@@ -1090,7 +1146,23 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
                         />
                       )}
                     </div>
-                  </div>
+                    {/* Size */}
+                    <div className="col-span-2">
+                      <Label className="text-xs text-muted-foreground mb-1 block">
+                        Size <span className="text-primary text-[10px] font-medium">(auto-filled from profile)</span>
+                      </Label>
+                      {item.extracting ? (
+                        <Skeleton className="h-8 w-full" />
+                      ) : (
+                        <Input
+                          value={item.editSize ?? getProfileSizeForCategory(item.category, userProfile)}
+                          onChange={(e) => updateField(item.id, "editSize", e.target.value)}
+                          className="h-8 text-sm font-semibold border-primary/40 focus-visible:ring-primary"
+                          placeholder="e.g. M, L, 32"
+                        />
+                      )}
+                    </div>
+                  </div>          </div>
 
                   {/* Confidence badge */}
                   {!item.extracting && item.metadata?.confidence != null && (
@@ -1164,7 +1236,20 @@ function TaggingModal({ open, pendingItems, setPendingItems, onConfirm, categori
   );
 }
 
-function WardrobeCard({ item, onDelete, onClick }) {
+function WardrobeCard({ item, onDelete, onClick, userProfile }) {
+  const cat = (item?.category || "").toLowerCase();
+  const isBottom = cat.includes("trouser") || cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short");
+  const isShoe = cat.includes("shoe") || cat.includes("footwear") || cat.includes("sneaker");
+  
+  let detectedSize = "M";
+  if (isBottom) {
+    detectedSize = userProfile?.bottomSize ? String(userProfile.bottomSize).toUpperCase() : "32";
+  } else if (isShoe) {
+    detectedSize = "UK 8";
+  } else {
+    detectedSize = userProfile?.topSize ? String(userProfile.topSize).toUpperCase() : "M";
+  }
+
   return (
     <Card className="overflow-hidden group cursor-pointer hover:shadow-md transition-shadow">
       <div className="relative aspect-square overflow-hidden" onClick={onClick}>
@@ -1190,7 +1275,10 @@ function WardrobeCard({ item, onDelete, onClick }) {
         <p className="text-xs font-medium truncate">{item.name}</p>
         <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
           <Badge variant="secondary" className="text-xs">
-            {item.category}
+            {item.category || "Apparel"}
+          </Badge>
+          <Badge variant="outline" className="text-xs font-bold text-red-600 dark:text-red-400 border-red-500/30 bg-red-500/10">
+            Size: {detectedSize}
           </Badge>
           {item.metadata?.primaryColor && (
             <span className="text-xs text-muted-foreground truncate">{item.metadata.primaryColor}</span>

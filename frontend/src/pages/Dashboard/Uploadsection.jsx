@@ -495,6 +495,11 @@ const UploadSection = ({ onUploadSuccess }) => {
                 </h4>
                 <p className="text-xs text-muted-foreground">
                   {exploreOutfit.category} • ₹{exploreOutfit.price ? exploreOutfit.price.toLocaleString("en-IN") : "999"}
+                  {exploreOutfit.selected_size && (
+                    <span className="ml-1 text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                      Size: {exploreOutfit.selected_size}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>

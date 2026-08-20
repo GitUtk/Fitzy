@@ -39,8 +39,113 @@ function Explore() {
   const [totalProducts, setTotalProducts] = useState(0);
   const itemsPerPage = 20;
 
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Fetch user profile to read topSize and bottomSize
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUserProfile(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user profile in Explore:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  // Helper function to resolve smaller size relative to base size
+  const getSmallerSize = (baseSize, isBottom) => {
+    if (!baseSize) return isBottom ? "30" : "S";
+    const s = String(baseSize).trim().toUpperCase();
+
+    // Bottom numerical waist size (e.g. 32 -> 30, 30 -> 28, 28 -> 26)
+    if (/^\d+$/.test(s)) {
+      const num = parseInt(s, 10);
+      return num > 24 ? String(num - 2) : String(num);
+    }
+
+    // Standard top letter sizes
+    const topOrder = ["XS", "S", "M", "L", "XL", "XXL"];
+    const idx = topOrder.indexOf(s);
+    if (idx > 0) {
+      return topOrder[idx - 1];
+    } else if (idx === 0) {
+      return "XS";
+    }
+
+    // Footwear UK size
+    if (s.startsWith("UK")) {
+      const num = parseInt(s.replace("UK", "").trim(), 10);
+      if (!isNaN(num) && num > 5) return `UK ${num - 1}`;
+    }
+
+    return isBottom ? "30" : "S";
+  };
+
+  // Resolve single size for product based on saved profile: 80% products get exact profile size, 20% get 1 step smaller size
+  const getSingleSizeForProduct = (product) => {
+    if (!product) {
+      return {
+        size: "M",
+        isProfileBased: false
+      };
+    }
+
+    const cat = (product.category || "").toLowerCase();
+    const gender = (product.gender || "").toLowerCase();
+    const isBottom = cat.includes("trouser") || cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short");
+    const isShoe = cat.includes("shoe") || cat.includes("footwear") || cat.includes("sneaker");
+
+    let desiredSize = "";
+    let isProfileBased = false;
+
+    if (isBottom) {
+      if (userProfile?.bottomSize) {
+        desiredSize = String(userProfile.bottomSize).toUpperCase();
+        isProfileBased = true;
+      } else {
+        desiredSize = gender === "women" ? "28" : "32";
+      }
+    } else if (isShoe) {
+      desiredSize = gender === "women" ? "UK 6" : "UK 8";
+    } else {
+      if (userProfile?.topSize) {
+        desiredSize = String(userProfile.topSize).toUpperCase();
+        isProfileBased = true;
+      } else {
+        desiredSize = "M";
+      }
+    }
+
+    const smallerSize = getSmallerSize(desiredSize, isBottom);
+
+    // Efficient deterministic hash: 80% products get exact desired size, 20% get smaller size
+    const pid = String(product.product_id || product.title || "1");
+    const hash = pid.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const size = (hash % 10 < 8) ? desiredSize : smallerSize;
+
+    return {
+      size,
+      desiredSize,
+      smallerSize,
+      isProfileBased
+    };
+  };
+
   // Modal Detail State
   const [selectedProductModal, setSelectedProductModal] = useState(null);
+
+  const openProductModal = (product) => {
+    setSelectedProductModal(product);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -113,14 +218,19 @@ function Explore() {
   };
 
   const handleTryOutfit = (product) => {
+    const sizeInfo = getSingleSizeForProduct(product);
+    const outfitWithDetails = {
+      ...product,
+      selected_size: sizeInfo.size
+    };
     const token = localStorage.getItem("token");
-    if (product) {
-      sessionStorage.setItem("pendingOutfit", JSON.stringify(product));
+    if (outfitWithDetails) {
+      sessionStorage.setItem("pendingOutfit", JSON.stringify(outfitWithDetails));
     }
     if (!token) {
       navigate("/login", {
         state: {
-          selectedOutfit: product,
+          selectedOutfit: outfitWithDetails,
           fromExplore: true
         }
       });
@@ -128,7 +238,7 @@ function Explore() {
     }
     navigate("/dashboard", {
       state: {
-        selectedOutfit: product
+        selectedOutfit: outfitWithDetails
       }
     });
   };
@@ -249,10 +359,11 @@ function Explore() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {products.map((product) => {
                 const isFavorite = savedProductIds.has(product.product_id);
+                const sizeInfo = getSingleSizeForProduct(product);
                 return (
                   <div
                     key={product.product_id || product.title}
-                    onClick={() => setSelectedProductModal(product)}
+                    onClick={() => openProductModal(product)}
                     className="group relative rounded-xl border border-border bg-card p-3 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:border-red-500/40 cursor-pointer overflow-hidden"
                   >
                     <div>
@@ -313,9 +424,15 @@ function Explore() {
                         )}
                       </div>
 
-                      <p className="font-bold text-sm text-foreground mt-1.5">
-                        ₹{product.price ? product.price.toLocaleString("en-IN") : "999"}
-                      </p>
+                      {/* Price & Single Size Display */}
+                      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40">
+                        <p className="font-bold text-sm text-foreground">
+                          ₹{product.price ? product.price.toLocaleString("en-IN") : "999"}
+                        </p>
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-muted text-foreground border border-border/70 group-hover:border-red-500/40 transition-colors">
+                          Size: {sizeInfo.size}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Action Button */}
@@ -435,50 +552,72 @@ function Explore() {
               </div>
 
               {/* Specs Grid */}
-              <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-3 rounded-lg border border-border">
-                <div>
-                  <span className="text-muted-foreground block">Category</span>
-                  <span className="font-medium">{selectedProductModal.category || "—"}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block">Fit</span>
-                  <span className="font-medium">{selectedProductModal.fit || "Standard"}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block">Material</span>
-                  <span className="font-medium">{selectedProductModal.material || "Quality Fabric"}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block">Pattern</span>
-                  <span className="font-medium">{selectedProductModal.pattern || "Plain/Textured"}</span>
-                </div>
-              </div>
+              {(() => {
+                const modalSizeInfo = getSingleSizeForProduct(selectedProductModal);
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-3 rounded-lg border border-border">
+                      <div>
+                        <span className="text-muted-foreground block">Category</span>
+                        <span className="font-medium">{selectedProductModal.category || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">Fit</span>
+                        <span className="font-medium">{selectedProductModal.fit || "Standard"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">Product Size</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">{modalSizeInfo.size}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">Material</span>
+                        <span className="font-medium">{selectedProductModal.material || "Quality Fabric"}</span>
+                      </div>
+                    </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-2 pt-2">
-                <Button
-                  type="button"
-                  className="w-full h-11 text-sm font-bold bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2 shadow-md"
-                  onClick={() => handleTryOutfit(selectedProductModal)}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  <span>✨ Try This Outfit</span>
-                </Button>
+                    {/* Single Size Card */}
+                    <div className="flex items-center justify-between bg-muted/30 p-3.5 rounded-xl border border-border">
+                      <div>
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground block">
+                          Product Size
+                        </span>
+                        <span className="text-sm font-black text-foreground">
+                          Size: {modalSizeInfo.size}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                        In Stock
+                      </span>
+                    </div>
 
-                {selectedProductModal.product_url && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-10 text-xs font-semibold flex items-center justify-center gap-1.5"
-                    onClick={() => {
-                      window.open(selectedProductModal.product_url, "_blank", "noopener,noreferrer");
-                    }}
-                  >
-                    <span>View on {selectedProductModal.store || "Store Website"}</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
+                    {/* Action Buttons */}
+                    <div className="space-y-2 pt-2">
+                      <Button
+                        type="button"
+                        className="w-full h-11 text-sm font-bold bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2 shadow-md"
+                        onClick={() => handleTryOutfit(selectedProductModal)}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        <span>✨ Try This Outfit (Size {modalSizeInfo.size})</span>
+                      </Button>
+
+                      {selectedProductModal.product_url && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full h-10 text-xs font-semibold flex items-center justify-center gap-1.5"
+                          onClick={() => {
+                            window.open(selectedProductModal.product_url, "_blank", "noopener,noreferrer");
+                          }}
+                        >
+                          <span>View on {selectedProductModal.store || "Store Website"}</span>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
