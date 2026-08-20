@@ -6,10 +6,7 @@ import {
   Heart,
   ExternalLink,
   ShoppingBag,
-  Filter,
   X,
-  ChevronRight,
-  Shirt,
   Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,24 +22,11 @@ const API_BASE_URL =
     ? "http://127.0.0.1:8000/api/v1"
     : "https://fitzy-f7uv.onrender.com/api/v1");
 
-const CATEGORIES = [
-  "All",
-  "Shirts",
-  "Dresses",
-  "Trousers",
-  "Jeans",
-  "T-Shirts",
-  "Footwear",
-  "Shorts",
-  "Cargo Pants"
-];
-
 function Explore() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState(CATEGORIES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -92,11 +76,6 @@ function Explore() {
 
       setProducts(rawProducts);
       setTotalProducts(data.total || rawProducts.length);
-
-      if (data.categories && data.categories.length > 0) {
-        const merged = Array.from(new Set(["All", ...data.categories, ...CATEGORIES]));
-        setCategories(merged);
-      }
     } catch (err) {
       console.error("Catalog fetch error:", err);
       setError(err.message || "Failed to load catalog. Please try again.");
@@ -111,11 +90,6 @@ function Explore() {
 
   const handleGenderChange = (g) => {
     setSelectedGender(g);
-    setCurrentPage(1);
-  };
-
-  const handleCategoryChange = (cat) => {
-    setSelectedCategory(cat);
     setCurrentPage(1);
   };
 
@@ -177,9 +151,7 @@ function Explore() {
                 <h1 className="font-display text-2xl md:text-3xl font-extrabold tracking-tight text-red-600 dark:text-red-500">
                   Explore Outfit Catalog
                 </h1>
-                <Badge variant="outline" className="border-red-500/30 text-red-500 bg-red-500/10 text-xs font-semibold">
-                  Live Commercial Items
-                </Badge>
+                
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Browse real apparel from Snitch & Newme. Click any item to try it on directly on your photo.
@@ -188,62 +160,41 @@ function Explore() {
           </div>
 
           {/* Search & Filter Controls */}
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-              {/* Search Bar */}
-              <form onSubmit={handleSearchSubmit} className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search shirts, dresses, linen, baggy fit..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-20 h-11 text-sm bg-card border-border shadow-none focus-visible:ring-red-500"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold"
-                >
-                  Search
-                </Button>
-              </form>
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+            {/* Search Bar */}
+            <form onSubmit={handleSearchSubmit} className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search shirts, dresses, linen, baggy fit..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-20 h-11 text-sm bg-card border-border shadow-none focus-visible:ring-red-500"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold"
+              >
+                Search
+              </Button>
+            </form>
 
-              {/* Gender Filter Buttons */}
-              <div className="flex items-center bg-muted/60 p-1 rounded-lg border border-border shrink-0 self-start md:self-auto">
-                {["All", "Men", "Women"].map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => handleGenderChange(g)}
-                    className={cn(
-                      "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
-                      selectedGender === g
-                        ? "bg-card text-red-600 dark:text-red-400 shadow-sm border border-border"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {g === "Men" ? "Men (Snitch)" : g === "Women" ? "Women (Newme)" : "All Stores"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {categories.map((cat) => (
+            {/* Gender Filter Buttons */}
+            <div className="flex items-center bg-muted/60 p-1 rounded-lg border border-border shrink-0 self-start md:self-auto">
+              {["All", "Men", "Women"].map((g) => (
                 <button
-                  key={cat}
+                  key={g}
                   type="button"
-                  onClick={() => handleCategoryChange(cat)}
+                  onClick={() => handleGenderChange(g)}
                   className={cn(
-                    "px-3.5 py-1.5 text-xs font-medium rounded-full border whitespace-nowrap transition-all shrink-0",
-                    selectedCategory === cat
-                      ? "bg-red-600 text-white border-red-600 shadow-sm"
-                      : "bg-card border-border text-muted-foreground hover:border-red-500/50 hover:text-foreground"
+                    "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                    selectedGender === g
+                      ? "bg-card text-red-600 dark:text-red-400 shadow-sm border border-border"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {cat}
+                  {g === "Men" ? "Men (Snitch)" : g === "Women" ? "Women (Newme)" : "All Stores"}
                 </button>
               ))}
             </div>
