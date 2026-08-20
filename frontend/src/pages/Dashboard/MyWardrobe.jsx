@@ -235,6 +235,8 @@ function MyWardrobe() {
   const [userProfile, setUserProfile] = useState(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [purchaseModalProduct, setPurchaseModalProduct] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const fileInputRef = useRef(null);
 
   const fetchProfile = async () => {
@@ -247,9 +249,43 @@ function MyWardrobe() {
       if (res.ok) {
         const data = await res.json();
         setUserProfile(data);
+        fetchRecommendations(data);
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const fetchRecommendations = async (profile) => {
+    setRecommendationsLoading(true);
+    try {
+      let userGender = "Men";
+      if (profile?.gender?.toLowerCase() === "female" || profile?.gender?.toLowerCase() === "women") {
+        userGender = "Women";
+      }
+
+      const params = new URLSearchParams();
+      params.append("gender", userGender);
+      params.append("limit", "20");
+
+      const response = await fetch(`${API_BASE_URL}/recommendations/catalog?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        let rawProducts = data.products || [];
+        
+        if (userGender === "Men") {
+          rawProducts = rawProducts.filter((p) => p.store === "Snitch" || p.gender === "Men");
+        } else if (userGender === "Women") {
+          rawProducts = rawProducts.filter((p) => p.store === "Newme" || p.gender === "Women");
+        }
+
+        const shuffled = rawProducts.sort(() => 0.5 - Math.random());
+        setRecommendations(shuffled.slice(0, 5));
+      }
+    } catch (err) {
+      console.error("Recommendations fetch error:", err);
+    } finally {
+      setRecommendationsLoading(false);
     }
   };
 
@@ -811,6 +847,102 @@ function MyWardrobe() {
           )}
         </>
       )}
+
+      {/* Recommended For You Section */}
+      <div className="pt-10 border-t mt-12 mb-8">
+        <div className="flex items-center gap-2 mb-6">
+          <Sparkles className="h-5 w-5 text-red-500" />
+          <h3 className="font-display text-xl font-bold tracking-tight text-foreground">
+            Recommended For You
+          </h3>
+        </div>
+        
+        {recommendationsLoading ? (
+          <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="min-w-[240px] shrink-0 rounded-xl border border-border bg-card p-3 space-y-3 animate-pulse">
+                <div className="h-44 w-full bg-muted rounded-lg" />
+                <div className="h-4 w-3/4 bg-muted rounded" />
+                <div className="h-3 w-1/2 bg-muted rounded" />
+                <div className="h-8 w-full bg-muted rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : recommendations.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
+            {recommendations.map((product) => (
+              <div 
+                key={product.product_id || product.title}
+                className="group relative rounded-xl border border-border bg-card p-3 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:border-red-500/40 hover:-translate-y-1 min-w-[240px] shrink-0"
+              >
+                <div>
+                  <div className="relative h-48 w-full overflow-hidden rounded-lg bg-muted mb-3">
+                    <img
+                      src={product.image_url}
+                      alt={product.title}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      onError={(e) => {
+                        if (product.image && !product.image.startsWith("female")) {
+                          e.currentTarget.src = `https://fitzy-coral.vercel.app/static/images/${product.image}`;
+                        }
+                      }}
+                    />
+                    <div className="absolute top-2 left-2">
+                      <span
+                        className={cn(
+                          "text-[10px] font-extrabold px-2 py-0.5 rounded-md text-white shadow-sm",
+                          product.store === "Snitch" ? "bg-black/80" : "bg-purple-600/90"
+                        )}
+                      >
+                        {product.store || "Catalog"}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <p className="font-semibold text-sm line-clamp-1 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                    {product.title}
+                  </p>
+                  
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {product.category || "Apparel"}
+                    </span>
+                    {product.rating && (
+                      <span className="text-[10px] font-semibold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                        ★ {product.rating}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40">
+                    <p className="font-bold text-sm text-foreground">
+                      ₹{product.price ? product.price.toLocaleString("en-IN") : "999"}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="pt-3 mt-2 border-t border-border/50">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-8 text-xs font-semibold flex items-center justify-center gap-1.5"
+                    onClick={() => {
+                      if (product.product_url) {
+                        window.open(product.product_url, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                  >
+                    <span>View on Website</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <TaggingModal
         open={pendingItems.length > 0}
